@@ -95000,9 +95000,14 @@ function startPartieTimer() {
       clearInterval(_partieTimer);
       _tempsEcoule = true;
       if (tmr) { tmr.textContent = '00:00'; tmr.className = 'partie-tmr urgent'; }
-      // Attendre la fin du tour en cours
-      log('⏱ Temps écoulé ! Fin de partie après ce tour...', 'bad');
+      log('⏱ Temps écoulé ! Affichage des scores dans 2 secondes...', 'bad');
       snd('urgent');
+      // Déclenche automatiquement la fin de partie (affichage des scores),
+      // de façon indépendante sur chaque navigateur — pas besoin d'attendre
+      // qu'un tour se termine, pas besoin de coordination réseau.
+      setTimeout(function() {
+        if (_tempsEcoule) endGame();
+      }, 2000);
     } else if (_partieSecondes <= 300) { // 5 min restantes
       if (tmr) tmr.className = 'partie-tmr urgent';
       if (_partieSecondes === 300) {
