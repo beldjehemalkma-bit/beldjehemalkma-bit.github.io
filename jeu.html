@@ -95289,16 +95289,6 @@ function afficherIndicateurTour() {
     }
   }
 
-  if (window._nomAdverse) {
-    let badge = document.getElementById('score-adverse');
-    if (!badge) {
-      badge = document.createElement('div');
-      badge.id = 'score-adverse';
-      badge.style.cssText = 'position:fixed;top:60px;right:10px;padding:4px 12px;border-radius:10px;font-size:.82rem;font-weight:900;background:rgba(0,0,0,.75);color:#fff;z-index:199;pointer-events:none;border:1px solid rgba(200,160,32,.3);';
-      document.body.appendChild(badge);
-    }
-    badge.textContent = window._nomAdverse + ' : ' + (window._scoreAdverse || 0) + ' pts';
-  }
 
   ['btn-val','btn-pass','btn-chg-toggle'].forEach(id => {
     const el = document.getElementById(id);
