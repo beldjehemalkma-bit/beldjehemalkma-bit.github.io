@@ -149,13 +149,6 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:linear-gradient(135deg,#
 .tmr-expired{background:rgba(231,76,60,.12);border:1px solid rgba(231,76,60,.3);border-radius:8px;padding:7px 12px;font-size:.78rem;color:var(--red);text-align:center;display:none;}
 .tmr-expired.show{display:block;}
 
-/* Bandeau temps de partie écoulé — en haut de la zone de jeu, bien visible, clignotant */
-.partie-expired-banner{width:100%;box-sizing:border-box;margin-bottom:10px;
-  background:rgba(250,208,96,.97);border:2px solid #FAD060;border-radius:10px;padding:11px 16px;
-  font-size:.95rem;font-weight:900;color:#1a1400;text-align:center;display:none;
-  box-shadow:0 4px 16px rgba(0,0,0,.4);animation:urgentPulse .9s infinite;}
-.partie-expired-banner.show{display:block;}
-
 /* Log */
 .glog{background:rgba(0,0,0,.2);border-radius:10px;padding:10px;max-height:85px;overflow-y:auto;font-size:.78rem;}
 .log-e{padding:2px 0;border-bottom:1px solid rgba(255,255,255,.04);color:rgba(255,255,255,.6);}
@@ -785,14 +778,6 @@ body.theme-gold .hist-panel { background:rgba(5,26,16,.6); border-left-color:rgb
 </style>
 </head>
 <body>
-<script>
-(function() {
-  var p = new URLSearchParams(location.search);
-  if (p.get('role') === 'createur' || p.get('role') === 'invite') {
-    document.write('<style>#s-home{display:none !important;}</style>');
-  }
-})();
-</script>
 
 <!-- ACCUEIL -->
 <div id="s-home" class="screen active">
@@ -957,9 +942,6 @@ body.theme-gold .hist-panel { background:rgba(5,26,16,.6); border-left-color:rgb
   <div class="sbar" id="sbar"></div>
   <div class="game-layout">
   <div class="board">
-
-    <!-- Temps de partie écoulé -->
-    <div class="partie-expired-banner" id="partie-exp">⏱ Temps de partie écoulé — cliquez ici pour voir les scores finaux</div>
 
     <!-- Thème -->
     <div class="theme-box">
@@ -93381,12 +93363,9 @@ function renderWord() {
   const evalEl = document.getElementById('weval');
 
   if (G.changeMode) {
-    drop.innerHTML = '';
-    const chp = document.createElement('span');
-    chp.className = 'word-ph'; chp.id = 'wph';
-    chp.textContent = '🔄 Mode changement actif — sélectionnez les lettres en rouge sur le chevalet';
-    chp.style.color = 'var(--red)';
-    drop.appendChild(chp);
+    ph.style.display = 'block';
+    ph.textContent = '🔄 Mode changement actif — sélectionnez les lettres en rouge sur le chevalet';
+    ph.style.color = 'var(--red)';
     formed.textContent = '';
     evalEl.textContent = '';
     return;
@@ -94394,31 +94373,6 @@ document.addEventListener('DOMContentLoaded', function() {
     if (typeof renderMaquetteTabs === 'function') renderMaquetteTabs();
     if (typeof renderMaqGrille === 'function') renderMaqGrille(_maqActive);
   }
-  // Arrivée directe depuis une invitation acceptée sur la page d'accueil (index.html)
-  const role = urlParams.get('role');
-  if (role === 'createur' || role === 'invite') {
-    const codeUrl = urlParams.get('code');
-    const pseudoUrl = urlParams.get('pseudo') || 'Joueur';
-    const advUrl = urlParams.get('adv') || '';
-    _modeEnLigne = true;
-    window._nomJoueur = pseudoUrl;
-    window._nomAdverse = advUrl;
-    if (role === 'createur') {
-      if (window.creerPartieEnLigne) window.creerPartieEnLigne(pseudoUrl, codeUrl);
-    } else {
-      window._idAdverse = 'j1';
-      if (window.rejoindrePatie) window.rejoindrePatie(codeUrl, pseudoUrl);
-    }
-    openMaquette(true);
-    setTimeout(() => {
-      const chatZ = document.getElementById('maq-chat-zone');
-      if (chatZ) { chatZ.style.display = 'block'; chatZ.dataset.code = codeUrl; }
-      if (role === 'invite') {
-        const btnJ = document.getElementById('maq-btn-jouer');
-        if (btnJ) btnJ.style.display = 'none';
-      }
-    }, 300);
-  }
   setupDropZone();
   setupChevaletDropZone();
   makeDraggableScroll('chev');
@@ -95037,8 +94991,6 @@ function startPartieTimer() {
   _tempsEcoule = false;
   var el = document.getElementById('partie-timer');
   var tmr = document.getElementById('partie-tmr');
-  var pexpBanner = document.getElementById('partie-exp');
-  if (pexpBanner) pexpBanner.classList.remove('show');
   if (el) el.style.display = 'flex';
   updatePartieTimer();
   _partieTimer = setInterval(function() {
@@ -95048,9 +95000,7 @@ function startPartieTimer() {
       clearInterval(_partieTimer);
       _tempsEcoule = true;
       if (tmr) { tmr.textContent = '00:00'; tmr.className = 'partie-tmr urgent'; }
-      log('⏱ Temps écoulé ! Cliquez sur le bandeau pour voir les scores finaux.', 'bad');
-      var pexpBanner2 = document.getElementById('partie-exp');
-      if (pexpBanner2) pexpBanner2.classList.add('show');
+      log('⏱ Temps écoulé ! Affichage des scores dans 2 secondes...', 'bad');
       snd('urgent');
       // Fin automatique par le temps : pas de question "voulez-vous vraiment terminer ?"
       // On déclenche directement le bouton "Terminer ✓" (même code fiable), sans
@@ -95339,16 +95289,6 @@ function afficherIndicateurTour() {
     }
   }
 
-  if (window._nomAdverse) {
-    let badge = document.getElementById('score-adverse');
-    if (!badge) {
-      badge = document.createElement('div');
-      badge.id = 'score-adverse';
-      badge.style.cssText = 'position:fixed;top:60px;right:10px;padding:4px 12px;border-radius:10px;font-size:.82rem;font-weight:900;background:rgba(0,0,0,.75);color:#fff;z-index:199;pointer-events:none;border:1px solid rgba(200,160,32,.3);';
-      document.body.appendChild(badge);
-    }
-    badge.textContent = window._nomAdverse + ' : ' + (window._scoreAdverse || 0) + ' pts';
-  }
 
   ['btn-val','btn-pass','btn-chg-toggle'].forEach(id => {
     const el = document.getElementById(id);
@@ -95602,8 +95542,8 @@ function ajouterMsgTexteLocal(who, texte, moi) {
   function pRef(code) { return ref(db, 'parties/' + code); }
   function genCode() { return Math.random().toString(36).substr(2,6).toUpperCase(); }
 
-  window.creerPartieEnLigne = function(nom, codeForce) {
-    const code = codeForce || genCode();
+  window.creerPartieEnLigne = function(nom) {
+    const code = genCode();
     set(pRef(code), {
       code, etat: 'attente', maquette: null,
       joueurs: { j1: { nom, score: 0 } },
