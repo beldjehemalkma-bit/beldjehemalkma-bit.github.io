@@ -93976,6 +93976,7 @@ function confirmerMot() {
 }
 
 function _confirmerMotFinalize(word, pIdx) {
+  if (_modeEnLigne && _tempsEcoule) { endGame(); return; }
   const p = G.players[pIdx]; // récupérer le joueur par index
   const ev = evalWordSync(word);
   if (ev.valid && ev.score > 0) {
@@ -94047,6 +94048,7 @@ function quitterPartie() {
 }
 
 function passerTour() {
+  if (_modeEnLigne && _tempsEcoule) { endGame(); return; }
   log(curP().name + ' passe son tour', '');
   G.passCount++;
   G.word = []; G.changeSel = []; G.changeMode = false;
@@ -96178,6 +96180,7 @@ function defiRefuser() {
 
 // Applique la décision (locale ou reçue via Firebase) sur le joueur AUTEUR du mot
 function traiterReponseDefi(accepte) {
+  if (_modeEnLigne && _tempsEcoule) { endGame(); return; }
   const word = G._defiWord;
   const pIdx = G._defiPIdx !== undefined ? G._defiPIdx : 0;
   const p = G.players && G.players[pIdx];
