@@ -93233,7 +93233,7 @@ function stopTimer() {
   if (G.timer) { clearInterval(G.timer); G.timer = null; }
 }
 window.stopTimer = stopTimer;
-window.endGame = function() { endGame(); };
+// (correctif) window.endGame est déjà défini par la déclaration de la fonction : l'ancien wrapper s'appelait lui-même
 function updateTimer() {
   const m = Math.floor(G.timeLeft / 60);
   const s = G.timeLeft % 60;
@@ -94269,15 +94269,7 @@ function endGame() {
     return;
   }
 
-  // Mode local
-  G.players.forEach(function(p) {
-    var pen = 0;
-    p.letters.forEach(function(l) { if (l) pen += (vL(l)||0); });
-    if (pen > 0) {
-      p.score = Math.max(0, p.score - pen);
-      log(p.name + ' : -' + pen + ' pts (lettres restantes)', 'bad');
-    }
-  });
+  // Mode local — aucune pénalité sur les lettres restantes
   var sorted = G.players.slice().sort(function(a,b) { return b.score - a.score; });
   _afficherEcranFin(sorted);
 }
