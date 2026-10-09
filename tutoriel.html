@@ -577,13 +577,13 @@ img.board-shot:hover { box-shadow:0 0 24px rgba(200,160,32,.35); }
 
                     <!-- ÉTAPE 7 -->
                     <div class="step-card">
-                        <div class="step-icon">🎫</div>
-                        <div class="step-number">7</div>
-                        <div class="step-title">Droit de passe (si bloqué)</div>
-                        <div class="step-description">
-                            Chaque joueur dispose de <span class="highlight">3 jetons Droit de Passe</span> pour toute la partie. En cas d'incapacité totale de former un mot, remettez un jeton à l'arbitre, puis échangez librement tout ou partie de vos lettres à la Cagnotte L. Une fois vos 3 jetons épuisés, un nouveau blocage entraîne une <span class="highlight">pénalité de 5 points</span> — mais vous conservez le droit d'échanger vos lettres.
-                        </div>
+                    <div class="step-icon">🔁</div>
+                    <div class="step-number">7</div>
+                    <div class="step-title">Passer son tour (si bloqué)</div>
+                    <div class="step-description">
+                        En cas d'incapacité totale de former un mot, annoncez que vous <span class="highlight">passez votre tour</span>, puis échangez librement tout ou partie de vos lettres avec la Cagnotte L. Ce tour compte comme passé : <span class="highlight">aucun point n'est marqué</span>.
                     </div>
+                </div>
 
                     <!-- ÉTAPE 8 -->
                     <div class="step-card">
@@ -756,7 +756,6 @@ img.board-shot:hover { box-shadow:0 0 24px rgba(200,160,32,.35); }
         // Tuiles spéciales
         const specials = [
             {x:-10, y:170, rot:-8, text:'ACHAT\nVENTE'},
-            {x:600, y:200, rot:10, text:'DROIT DE\nPASSE'},
             {x:610, y:420, rot:-6, text:'SUPER\nMOT'},
         ];
         
