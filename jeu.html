@@ -93084,6 +93084,7 @@ function startGame() {
     letterBag: mkBag(),
     caseBag: mkCaseBag(),
     usedCaseIds: new Set(),
+    playedCaseIds: new Set(), lastPlateId: null, lastPlateFails: 0,
     curCase: null,
     word: [],        // [{idx, letter, jokerAs}]
     changeMode: false,
@@ -93113,7 +93114,7 @@ function mkBag() {
   Object.entries(LC).forEach(([l,c]) => { for(let i=0;i<c.n;i++) b.push(l); });
   return b;
 }
-function mkCaseBag() { return shuffle([...CASES]); }
+function mkCaseBag(played) { return shuffle(played ? CASES.filter(c => !played.has(c.id)) : [...CASES]); }
 function drawL(n) {
   const r = [];
   for (let i = 0; i < n && G.letterBag.length > 0; i++) r.push(G.letterBag.pop());
@@ -93144,7 +93145,7 @@ function drawCase(silent) {
   if (G.previousCaseId && G.curCase && G.previousCaseId === G.curCase.id) G.usedCaseIds.delete(G.curCase.id);
   // Reconstruire le sac si vide
   if (G.caseBag.length === 0) {
-    G.caseBag = mkCaseBag();
+    G.caseBag = mkCaseBag(_modeEnLigne ? null : G.playedCaseIds);
     G.usedCaseIds = new Set();
   }
   // Chercher une case non jouée
@@ -93165,6 +93166,14 @@ function drawCase(silent) {
   G.usedCaseIds.add(c.id);
   G.previousCaseId = c.id;
   G.curCase = c;
+  // Dernière plaque (jeu local) : on compte les tentatives ratées, une par joueur
+  if (!_modeEnLigne && G.playedCaseIds) {
+    const restantes = CASES.filter(x => !G.playedCaseIds.has(x.id)).length;
+    if (restantes === 1) {
+      if (G.lastPlateId === c.id) G.lastPlateFails = (G.lastPlateFails || 0) + 1;
+      else { G.lastPlateId = c.id; G.lastPlateFails = 0; }
+    } else { G.lastPlateId = null; G.lastPlateFails = 0; }
+  }
   G.word = [];
   G.changeSel = [];
   renderCase();
@@ -93174,6 +93183,7 @@ function drawCase(silent) {
 
 function nouveauTheme() {
   if (G.themeChanged) { log('⚠ Un seul changement par tour !', 'bad'); return; }
+  if (!_modeEnLigne && G.playedCaseIds && CASES.filter(x => !G.playedCaseIds.has(x.id)).length <= 1) { log('⚠ Dernière plaque : le changement de thème n\'est plus possible', 'bad'); return; }
   drawCase(false); G.themeChanged = true;
   log('🎲 Case ' + G.curCase.id + ' — ' + G.curCase.th, 'inf');
   // Synchroniser le nouveau thème avec l'adversaire
@@ -94009,7 +94019,11 @@ function _confirmerMotFinalize(word, pIdx) {
   renderHistPanel();
   log(p.name + ' joue "' + word + '" → ' + (ev.score > 0 ? '+'+ev.score+' pts' : 'score annulé'), ev.valid ? 'ok' : 'bad');
   if (p.letters.length === 0) { endGame(); return; }
-  if (G.letterBag.length === 0 && G.phase === 'normal') {
+  if (!_modeEnLigne) {
+    if (ev.valid && ev.score > 0 && G.playedCaseIds && G.curCase) G.playedCaseIds.add(G.curCase.id);
+    if (G.letterBag.length === 0) { log('⚠ Cagnotte L épuisée — fin de partie', 'inf'); endGame(); return; }
+    if (G.playedCaseIds && G.playedCaseIds.size >= CASES.length) { log('⚠ Plus de plaques dans la cagnotte T — fin de partie', 'inf'); endGame(); return; }
+  } else if (G.letterBag.length === 0 && G.phase === 'normal') {
     G.phase = 'final';
     log('⚠ Cagnotte épuisée — phase finale !', 'inf');
   }
@@ -94133,6 +94147,7 @@ function confirmerChange() {
 // ═══════════════════════════════════════════
 function nextTurn() {
   if (_tempsEcoule) { endGame(); return; }
+  if (!_modeEnLigne && G.playedCaseIds && G.lastPlateFails >= G.players.length) { log('🚫 Dernière plaque injouable — jeu bloqué, fin de partie', 'bad'); endGame(); return; }
   G.word = []; G.changeSel = []; G.changeMode = false; G.insertPos = 0;
   G.themeChanged = false;
   setBgUrgent(false);
@@ -94239,6 +94254,11 @@ function botFinish(p, best, bestS) {
     renderHistPanel();
     log('🤖 ' + p.name + ' joue "' + best.word + '" → +' + bestS + ' pts', 'ok');
     if (p.letters.length === 0) { endGame(); return; }
+    if (!_modeEnLigne && G.playedCaseIds && G.curCase) {
+      G.playedCaseIds.add(G.curCase.id);
+      if (G.letterBag.length === 0) { log('⚠ Cagnotte L épuisée — fin de partie', 'inf'); endGame(); return; }
+      if (G.playedCaseIds.size >= CASES.length) { log('⚠ Plus de plaques dans la cagnotte T — fin de partie', 'inf'); endGame(); return; }
+    }
   } else {
     log('🤖 ' + p.name + ' passe son tour', '');
     G.passCount++;
@@ -96197,7 +96217,11 @@ function traiterReponseDefi(accepte) {
   renderAll(); renderHistPanel();
 
   if (p.letters.length === 0) { endGame(); return; }
-  if (G.letterBag.length === 0 && G.phase === 'normal') {
+  if (!_modeEnLigne) {
+    if (accepte && G.playedCaseIds && G.curCase) G.playedCaseIds.add(G.curCase.id);
+    if (G.letterBag.length === 0) { log('⚠ Cagnotte L épuisée — fin de partie', 'inf'); endGame(); return; }
+    if (G.playedCaseIds && G.playedCaseIds.size >= CASES.length) { log('⚠ Plus de plaques dans la cagnotte T — fin de partie', 'inf'); endGame(); return; }
+  } else if (G.letterBag.length === 0 && G.phase === 'normal') {
     G.phase = 'final';
     log('⚠ Cagnotte épuisée — phase finale !', 'inf');
   }
