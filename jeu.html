@@ -92797,6 +92797,32 @@ fetch('dictionnaire.json')
         });
       });
     }
+    // ─── Les cases de thème suivent aussi l'Excel (dictionnaire lexical) ───
+    // 'ajout' : les mots de l'Excel sont AJOUTÉS aux listes du jeu, sans jamais en retirer.
+    // 'remplacer' : l'Excel devient la référence unique (à n'activer que lorsque l'Excel contient tout ce que le jeu doit connaître).
+    const SYNC_THEMES = 'ajout';
+    if (!Array.isArray(data)) {
+      const cle = t => norm(t).replace(/[^A-Z0-9]/g, '');
+      const parNom = {};
+      Object.keys(DICT).forEach(k => { (parNom[cle(k)] = parNom[cle(k)] || []).push(k); });
+      const lex = {};
+      Object.values(data).forEach(themes => Object.entries(themes).forEach(([nom, mots]) => {
+        const c = cle(nom); if (!lex[c]) lex[c] = new Set();
+        mots.forEach(m => lex[c].add(m.toUpperCase()));
+      }));
+      let ajouts = 0, themesMaj = 0;
+      Object.entries(lex).forEach(([c, mots]) => (parNom[c] || []).forEach(k => {
+        if (SYNC_THEMES === 'remplacer') {
+          if (mots.size >= DICT[k].length * 0.5) { DICT[k] = [...mots]; themesMaj++; }
+        } else {
+          const deja = new Set(DICT[k].map(w => norm(w)));
+          let n = 0;
+          mots.forEach(m => { const nm = norm(m); if (!deja.has(nm)) { DICT[k].push(m); deja.add(nm); n++; } });
+          if (n) { ajouts += n; themesMaj++; }
+        }
+      }));
+      console.log('Thèmes synchronisés avec dictionnaire.json (' + SYNC_THEMES + ') :', themesMaj, 'thèmes,', ajouts, 'mots ajoutés');
+    }
     console.log('Dico universel chargé:', DICO_LIBRE.size, 'mots');
   })
   .catch(e => console.warn('Dico universel non chargé:', e));
