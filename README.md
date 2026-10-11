@@ -1,4 +1,4 @@
-dme# ALKAMO — Le Jeu des Mots
+# ALKAMO — Le Jeu des Mots
 
 <h1 align="center">« Là où les murs enferment,<br>naît le jeu du mot qu'il faut »</h1>
 
@@ -31,24 +31,19 @@ Totaliser le plus de points en formant des mots liés aux thèmes du tapis.
 - Former un mot lié au **champ lexical** du thème
 - Pluriel, féminin, même famille : **acceptés !**
 - **Bonus Labourage** : mot exact de la case = score × 2
-- Si impossible : passer son tour en usant de son jeton ''droit de passe''
-
-### 3 — Le Super Mot ⭐
-Composer un mot avec les **10 lettres** du chevalet :
-> **+20 pts bonus** — Un seul Super Mot par joueur par partie
+- Si impossible : passer son tour et échanger librement tout ou partie de ses lettres (aucun point n'est marqué)
 
 ---
 
 ## ⚖️ RÈGLEMENT
 
-### 4 — Cases Spéciales
+### 3 — Cases Spéciales
 | Case | Bonus |
 |------|-------|
 | C1, C5 | +10 pts bonus |
 | Labourage | Score × 2 |
-| 10 lettres | +20 pts bonus |
 
-### 5 — Achat · Vente · Échange
+### 4 — Achat · Vente · Échange
 
 | Action | Description |
 |--------|-------------|
@@ -58,13 +53,14 @@ Composer un mot avec les **10 lettres** du chevalet :
 
 > ⚠️ Autorisé **3 fois** par partie · Prix max = **2× valeur**
 
-### 6 — Fin de Partie
-La partie se termine quand :
-- Plus de plaques dans la Cagnotte T
-- Un joueur n'a plus de lettres
-- Plus de lettres dans la Cagnotte L
-- Tous déclarent ne plus pouvoir jouer
-- Le temps de partie convenu à l'unanimité en début de partie (entre 30 minutes et 2 heures) est écoulé.
+### 5 — Fin de Partie
+La partie se termine dès que l'une de ces situations se produit :
+- **Cagnotte T** : le joueur qui tire la dernière plaque thème tente de la jouer. Dès qu'elle est jouée, la partie est terminée. S'il ne la joue pas, chaque joueur tente à son tour ; si personne n'y parvient, le jeu est bloqué
+- **Cagnotte L** : dès qu'il n'y a plus de lettres, la partie est terminée aussitôt que le mot en cours est compté
+- **Jeu bloqué** : tous les joueurs déclarent ne plus pouvoir former de mot
+- **Temps écoulé** : le temps de partie convenu à l'unanimité en début de partie (entre 30 minutes et 2 heures) est écoulé
+
+Le joueur totalisant le plus de points est déclaré **Laboureur de la saison**.
 ---
 
 ## 📚 CHAMP LEXICAL
