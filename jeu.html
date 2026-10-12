@@ -1043,7 +1043,7 @@ body.theme-gold .hist-panel { background:rgba(5,26,16,.6); border-left-color:rgb
     <div class="tuto-free">✦ Cases libres : tout mot du dictionnaire français est accepté !</div>
     <div class="tuto-step"><div class="tuto-n">4</div><div class="tuto-c"><h3>Joker ★</h3><p>Une fenêtre s'ouvre pour choisir la lettre que représente le joker.</p></div></div>
     <div class="tuto-step"><div class="tuto-n">5</div><div class="tuto-c"><h3>Changer des lettres</h3><p>Cliquez <strong>Activer le changement</strong>, sélectionnez les lettres en rouge, puis <strong>Confirmer</strong>. Uniquement si le timer n'est pas expiré !</p></div></div>
-    <div class="tuto-step"><div class="tuto-n">6</div><div class="tuto-c"><h3>Score</h3><p>7 lettres ou plus → <strong>+10 pts bonus</strong>. Mots hors thème = <strong>score annulé</strong>.</p></div></div>
+    <div class="tuto-step"><div class="tuto-n">6</div><div class="tuto-c"><h3>Score</h3><p>Cases C1 et C5 → <strong>+10 pts bonus</strong>. Mots hors thème = <strong>score annulé</strong>.</p></div></div>
     <!-- Bonus Labourage -->
     <div class="tuto-bonus">
       <div class="tuto-bonus-icon">🌾</div>
@@ -93833,7 +93833,6 @@ function buildWord() {
 function calcScore(word) {
   let s = 0;
   G.word.forEach(w => s += vL(w.letter));
-  if (word.length >= 7) s += 10;
   if (G.curCase?.bonus) s += G.curCase.bonus;
   return s;
 }
