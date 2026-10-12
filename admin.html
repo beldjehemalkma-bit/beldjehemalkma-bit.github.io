@@ -397,7 +397,7 @@ const THEME_COLORS = [
 
 const MAQ_LABELS = {
   M1: '🎯 Maquette N°1', M2: '🌟 Maquette N°2',
-  M3: '🏆 Maquette N°3', M4: '💫 Maquette N°4', M5: '🎓 Maquette Expert'
+  M3: '🏆 Maquette N°3', M4: '💫 Maquette N°4', M5: '🎓 Maquette N°5 · Expert'
 };
 
 function afficherStats(data) {
@@ -810,7 +810,7 @@ function buildDictionnairePDF(data) {
   y += 3;
   y = wrapText("Cette liste n'est pas exhaustive. Elle est appel\u00e9e \u00e0 \u00eatre r\u00e9guli\u00e8rement enrichie, corrig\u00e9e et compl\u00e9t\u00e9e au fil des parties et des retours des joueurs.", y);
   y += 3;
-  y = wrapText("ALKAMO compte 5 maquettes (4 maquettes de 20 th\u00e8mes, plus la maquette Expert de 25 th\u00e8mes), soit 105 th\u00e8mes au total. Certains th\u00e8mes reviennent sur plusieurs maquettes ; chaque occurrence poss\u00e8de sa propre liste de mots et est pr\u00e9sent\u00e9e s\u00e9par\u00e9ment ci-apr\u00e8s, avec l'indication de sa maquette d'origine.", y);
+  y = wrapText("ALKAMO compte 5 maquettes (4 maquettes de 20 th\u00e8mes, plus la maquette N°5 (Expert) de 25 th\u00e8mes), soit 105 th\u00e8mes au total. Certains th\u00e8mes reviennent sur plusieurs maquettes ; chaque occurrence poss\u00e8de sa propre liste de mots et est pr\u00e9sent\u00e9e s\u00e9par\u00e9ment ci-apr\u00e8s, avec l'indication de sa maquette d'origine.", y);
   y += 6;
   doc.setFont('helvetica', 'bold'); doc.setFontSize(10.5); doc.setTextColor(GOLDLIGHT[0], GOLDLIGHT[1], GOLDLIGHT[2]);
   doc.text('Quelques expressions du jeu', MARGIN, y); y += 6;

@@ -92753,7 +92753,7 @@ const MAQUETTES = {
     ]
   },
   5: {
-    nom: "Maquette Expert", emoji: "🎓",
+    nom: "Maquette N°5 · Expert", emoji: "🎓",
     cases: [
       {id:'A1',th:'ARCHITECTURE',emoji:'🏛'},     {id:'B1',th:'ART',emoji:'🎨'},
       {id:'C1',th:'HISTOIRE',emoji:'📜'},          {id:'D1',th:'ASTRONOMIE',emoji:'🔭'},
@@ -94826,7 +94826,7 @@ function renderMaquetteTabs() {
     card.className = 'maq-card-mini' + (n === _maqActive ? ' active' : '');
     card.innerHTML =
       '<div class="maq-card-mini-emoji">' + (m.emoji||'🎲') + '</div>' +
-      '<div class="maq-card-mini-nom">' + m.nom + '</div>' +
+      '<div class="maq-card-mini-nom">' + m.nom.replace(' · ', '<br>') + '</div>' +
       '<div class="maq-card-mini-themes">' + themes + '...</div>';
     card.onclick = function() {
       _maqActive = n;

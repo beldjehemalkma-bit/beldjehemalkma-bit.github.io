@@ -51,12 +51,12 @@ Totaliser le plus de points en formant des mots liés aux thèmes du tapis.
 | **Vente** | Cède une lettre à un autre joueur |
 | **Échange** | 10 lettres restent identiques |
 
-> ⚠️ Autorisé **3 fois** par partie · Prix max = **2× valeur**
+> ⚠️ Autorisé **2 fois** par partie (2 jetons de transaction par joueur) · Prix max = **2× valeur**
 
 ### 5 — Fin de Partie
 La partie se termine dès que l'une de ces situations se produit :
-- **Cagnotte T** : le joueur qui tire la dernière plaque thème tente de la jouer. Dès qu'elle est jouée, la partie est terminée. S'il ne la joue pas, chaque joueur tente à son tour ; si personne n'y parvient, le jeu est bloqué
-- **Cagnotte L** : dès qu'il n'y a plus de lettres, la partie est terminée aussitôt que le mot en cours est compté
+- **Cagnotte T** : le joueur qui tire la dernière plaque thème tente de la jouer. Dès qu'elle est jouée, la partie est terminée. S'il ne la joue pas, chaque joueur dispose, à tour de rôle, d'une seule tentative ; si personne n'y parvient, le jeu est bloqué
+- **Cagnotte L** : dès qu'un joueur, après avoir fait valider son mot, prend la dernière lettre de la cagnotte L, la partie s'arrête ; son mot est compté et personne ne joue plus (un mot refusé ne fait pas piocher : la partie continue)
 - **Jeu bloqué** : tous les joueurs déclarent ne plus pouvoir former de mot
 - **Temps écoulé** : le temps de partie convenu à l'unanimité en début de partie (entre 30 minutes et 2 heures) est écoulé
 
