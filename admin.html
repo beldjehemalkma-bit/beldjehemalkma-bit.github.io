@@ -792,7 +792,7 @@ function buildDictionnairePDF(data) {
   doc.setFont('helvetica', 'bold'); doc.setFontSize(13); doc.setTextColor(GOLDLIGHT[0], GOLDLIGHT[1], GOLDLIGHT[2]);
   doc.text('Pr\u00e9face', PW / 2, y, { align: 'center' }); y += 10;
   doc.setFont('helvetica', 'bolditalic'); doc.setFontSize(11); doc.setTextColor(GOLDLIGHT[0], GOLDLIGHT[1], GOLDLIGHT[2]);
-  y = wrapCenterText('\u00ab L\u00e0 o\u00f9 les murs enferment, na\u00eet le jeu du mot qu\'il faut \u00bb', y, CW - 10, 5);
+  y = wrapCenterText('\u00ab Quand les murs se referment, le jeu des mots ouvre le champ. \u00bb', y, CW - 10, 5);
   y += 6;
   y = wrapText("Le principe d'ALKAMO repose sur le champ lexical : pour chaque th\u00e8me du plateau, les joueurs doivent former un mot appartenant au r\u00e9seau de sens qui l'entoure \u2014 synonymes, mots de m\u00eame famille, m\u00eame domaine ou m\u00eame notion.", y);
   y += 3;
