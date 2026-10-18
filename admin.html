@@ -815,6 +815,22 @@ function buildDictionnairePDF(data) {
     y = drawThemeBlock(label, e.words, y);
   });
 
+  // ---------- SOURCES ET CREDITS ----------
+  addPageBg(true);
+  y = MARGIN + 4;
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(13); doc.setTextColor(GOLDLIGHT[0], GOLDLIGHT[1], GOLDLIGHT[2]);
+  doc.text('Sources et cr\u00e9dits', PW / 2, y, { align: 'center' }); y += 10;
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(10.5); doc.setTextColor(WHITE[0], WHITE[1], WHITE[2]);
+  y = wrapText("Les th\u00e8mes et lexiques d'ALKAMO ont \u00e9t\u00e9 \u00e9labor\u00e9s par l'auteur \u00e0 partir de ressources consult\u00e9es, notamment :", y);
+  y += 2;
+  ['Centre National de Ressources Textuelles et Lexicales (cnrtl.fr)', 'Wiktionnaire (fr.wiktionary.org, licence CC BY-SA)', 'Rimes Solides (rimessolides.com)', 'Lexilogos (lexilogos.com)', 'Le Dictionnaire visuel (ikonet.com)'].forEach(function (l) { y = wrapText('\u2022  ' + l, y, { indent: 4 }); y += 1.5; });
+  y += 3;
+  y = wrapText("La validation orthographique s'appuie sur les dictionnaires Hunspell.", y); y += 3;
+  y = wrapText("Musiques du jeu : Pixabay (licence Pixabay) \u2014 \u00ab Golden Dunes \u00bb et \u00ab Celestial Oud \u00bb de djovan.", y); y += 3;
+  y = wrapText("L'illustration de l'\u00e9cran d'accueil du jeu a \u00e9t\u00e9 g\u00e9n\u00e9r\u00e9e par intelligence artificielle.", y); y += 6;
+  doc.setFont('helvetica', 'bold');
+  y = wrapText("Tous droits r\u00e9serv\u00e9s sur le jeu ALKAMO et ses contenus originaux.", y);
+
   doc.save('ALKAMO_Dictionnaire_Lexical.pdf');
 }
 
