@@ -1,6 +1,6 @@
 # ALKAMO — Le Jeu des Mots
 
-<h1 align="center">« Quand les murs se referment,<br>le jeu des mots ouvre le champ. »</h1>
+<h1 align="center">« Semez les lettres,<br>récoltez les mots ! »</h1>
 
 ---
 
