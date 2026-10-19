@@ -94066,8 +94066,15 @@ function _confirmerMotFinalize(word, pIdx) {
 function quitterPartie() {
   // Ouvrir notre propre modal de confirmation
   const mfin = document.getElementById('m-fin');
-  if (mfin) mfin.classList.add('open');
+  if (mfin) { mfin.style.display = ''; mfin.classList.add('open'); }
 }
+
+// Bouton « Fin de partie » du menu ☰ (défini ici, hors du module Firebase, pour être toujours disponible)
+function confirmerFinPartie() {
+  closeModal('m-menu');
+  quitterPartie();
+}
+window.confirmerFinPartie = confirmerFinPartie;
 
 function passerTour() {
   log(curP().name + ' passe son tour', '');
