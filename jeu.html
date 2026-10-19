@@ -219,6 +219,13 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:linear-gradient(135deg,#
   user-select: none;
 }
 .chev-tiles .gtile, .word-drop .gtile { flex-shrink: 0 !important; min-width: 50px; }
+
+/* ── Téléphone : le chevalet passe sur 2 rangées de 5 tuiles (toutes les lettres visibles, sans défilement) ── */
+@media(max-width:640px) {
+  .chev-tiles { flex-wrap: wrap !important; overflow-x: hidden !important; justify-content: center !important; cursor: default; padding-bottom: 6px; }
+  .chev-tiles .gtile { flex: 0 0 calc((100% - 20px) / 5) !important; width: calc((100% - 20px) / 5) !important; min-width: 0 !important; }
+}
+
 .chev-tiles::-webkit-scrollbar, .word-drop::-webkit-scrollbar { height: 6px; }
 .chev-tiles::-webkit-scrollbar-track, .word-drop::-webkit-scrollbar-track { background: rgba(255,255,255,.05); border-radius: 3px; }
 .chev-tiles::-webkit-scrollbar-thumb, .word-drop::-webkit-scrollbar-thumb { background: rgba(200,160,32,.6); border-radius: 3px; }
