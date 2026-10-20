@@ -92,6 +92,6 @@ Réseau de mots liés à un thème commun :
 
 ---
 
-*© 2025 ALKAMO — Beldjehem Alkma — Tous droits réservés*
+*© 2026 ALKAMO — Beldjehem Alkma — Tous droits réservés*
 *beldjehemalkma-bit.github.io/ALKAMO*
 
