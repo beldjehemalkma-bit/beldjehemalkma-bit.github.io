@@ -2650,6 +2650,7 @@
       "NOURRI",
       "OCELOT",
       "ODORAT",
+      "ŒIL",
       "OKAPI",
       "OMNIVORE",
       "ORANG",
@@ -2754,6 +2755,7 @@
       "SOIE",
       "SOLITAIRE",
       "SOURCIL",
+      "SOURIS",
       "SOYEUX",
       "STENO",
       "SUCER",
@@ -2823,8 +2825,7 @@
       "ZOKOR",
       "ZOO",
       "ZOOLOGIE",
-      "ZORILLE",
-      "ŒIL"
+      "ZORILLE"
     ],
     "TRANSPORT": [
       "ABONNEMENT",
