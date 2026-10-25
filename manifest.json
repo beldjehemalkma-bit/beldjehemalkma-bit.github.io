@@ -1,0 +1,16 @@
+{
+  "name": "ALKAMO — Le Jeu des Mots",
+  "short_name": "ALKAMO",
+  "description": "ALKAMO, le jeu de vocabulaire : lettres, thèmes, mots. Jouez en ligne à deux.",
+  "lang": "fr",
+  "start_url": "/index.html",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#12103A",
+  "theme_color": "#2E2575",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
