@@ -95190,6 +95190,14 @@ function fermerOnline() {
 window._salonMonUid = null;
 
 // Arrivée depuis le salon de la page d'accueil (invitation acceptée) : on va directement aux maquettes
+(function() {
+  const maj = function() {
+    try { if (window.presenceSalon) window.presenceSalon(_modeEnLigne && !window._finPartieRecu ? 'en_partie' : 'solo'); } catch (e) {}
+  };
+  setTimeout(maj, 1500);
+  setInterval(maj, 3000);
+})();
+
 function _finAccueilDirect() { document.documentElement.classList.remove('accueil-direct'); }
 function _demarrerDepuisAccueil(role, code, pseudo) {
   _modeEnLigne = true;
@@ -95672,6 +95680,27 @@ function ajouterMsgTexteLocal(who, texte, moi) {
       if (!fini && Object.keys(j).length > 1) { fini = true; unsub(); cb(); }
     });
   };
+
+  // Présence dans le salon de la page d'accueil : "solo" ou "en partie" (jamais bloquant pour le jeu)
+  const dbSalon = db; // même base que le salon de la page d'accueil
+  let _presenceRef = null, _presenceStatut = null, _presenceTs = 0;
+  window.presenceSalon = function(statut) {
+    try {
+      const uid = localStorage.getItem('alkamo_uid'), pseudo = localStorage.getItem('alkamo_pseudo');
+      if (!uid || !pseudo) return;
+      if (!_presenceRef) _presenceRef = ref(dbSalon, 'lobby/' + uid + '_jeu');
+      if (statut !== _presenceStatut || Date.now() - _presenceTs > 30000) {
+        _presenceStatut = statut; _presenceTs = Date.now();
+        onDisconnect(_presenceRef).remove();
+        set(_presenceRef, { pseudo: pseudo, statut: statut, ts: Date.now() });
+      }
+    } catch (e) {}
+  };
+
+  // À la fermeture de la page : retirer la présence tout de suite (sans attendre la coupure de connexion)
+  window.addEventListener('pagehide', function() {
+    try { if (_presenceRef) { remove(_presenceRef); _presenceStatut = null; _presenceTs = 0; } } catch (e) {}
+  });
 
   window.demarrerPartieFirebase = function(code, maquette, duree) {
     update(pRef(code), {

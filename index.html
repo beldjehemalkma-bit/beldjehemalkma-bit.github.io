@@ -1145,6 +1145,7 @@ let _invitationEnCours = null;
 onAuthStateChanged(auth, user => {
   if (!user) return;
   _myUid = user.uid;
+  try { localStorage.setItem('alkamo_uid', user.uid); } catch (e) {}
   _myPseudo = user.displayName || user.email.split('@')[0];
 
   // Nettoyage des traces d'une session précédente interrompue (ne touche jamais à "parties")
@@ -1167,7 +1168,7 @@ onAuthStateChanged(auth, user => {
   onValue(ref(db, 'lobby'), snap => {
     const data = snap.val() || {};
     const list = document.getElementById('lobby-list');
-    const joueurs = Object.entries(data).filter(([uid]) => uid !== _myUid);
+    const joueurs = Object.entries(data).filter(([uid]) => uid !== _myUid && !uid.startsWith(_myUid + '_') && !((uid + '_jeu') in data));
 
     if (joueurs.length === 0) {
       list.innerHTML = '<div class="lobby-empty">Aucun autre joueur connecté pour l\'instant...</div>';
@@ -1179,7 +1180,7 @@ onAuthStateChanged(auth, user => {
       return `<div class="lobby-player">
         <div class="lobby-avatar">${info.pseudo.charAt(0).toUpperCase()}</div>
         <div class="lobby-name">${info.pseudo}</div>
-        <div class="lobby-badge">${dispo ? '🟢 Disponible' : '🔴 En partie'}</div>
+        <div class="lobby-badge">${info.statut === 'disponible' ? '🟢 Disponible' : info.statut === 'solo' ? '🟡 Joue en solo' : '🔴 En partie'}</div>
         <button class="lobby-invite-btn" ${!dispo ? 'disabled' : ''}
           onclick="window._inviterJoueur('${uid}','${info.pseudo}', event)">
           Inviter 🎮
