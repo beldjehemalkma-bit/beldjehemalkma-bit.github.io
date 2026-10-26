@@ -95182,6 +95182,46 @@ function fermerOnline() {
 
 window._salonMonUid = null;
 
+// Arrivée depuis le salon de la page d'accueil (invitation acceptée) : on va directement aux maquettes
+function _demarrerDepuisAccueil(role, code, pseudo) {
+  _modeEnLigne = true;
+  window._nomJoueur = pseudo;
+  if (role === 'createur') {
+    window.creerPartieEnLigne(pseudo, code);
+    document.getElementById('online-code-show').textContent = code;
+    document.getElementById('online-step1').style.display = 'none';
+    document.getElementById('online-step2').style.display = 'block';
+    document.getElementById('online-modal').classList.add('open');
+    window.attendreAdversaire(code, function() { window._onSalonInviteAccepted(code); });
+  } else {
+    window._idAdverse = 'j1';
+    window.attendrePartie(code, function() {
+      window.rejoindrePatie(code, pseudo);
+      openMaquette(true);
+      setTimeout(() => {
+        const btnJ = document.getElementById('maq-btn-jouer');
+        if (btnJ) btnJ.style.display = 'none';
+        const chatZ = document.getElementById('maq-chat-zone');
+        if (chatZ) { chatZ.style.display = 'block'; chatZ.dataset.code = code; }
+      }, 200);
+    });
+  }
+}
+(function() {
+  const p = new URLSearchParams(window.location.search);
+  const role = p.get('role');
+  const code = (p.get('code') || '').toUpperCase();
+  const pseudo = p.get('pseudo') || 'Joueur';
+  if ((role !== 'createur' && role !== 'invite') || code.length < 4) return;
+  try { history.replaceState(null, '', window.location.pathname); } catch (e) {}
+  let essais = 0;
+  const lancer = () => {
+    if (window.creerPartieEnLigne && window.attendrePartie && document.getElementById('online-modal')) _demarrerDepuisAccueil(role, code, pseudo);
+    else if (++essais < 150) setTimeout(lancer, 100);
+  };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', lancer); else lancer();
+})();
+
 function escapeHtmlSalon(s) {
   return String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
 }
@@ -95582,8 +95622,8 @@ function ajouterMsgTexteLocal(who, texte, moi) {
   function pRef(code) { return ref(db, 'parties/' + code); }
   function genCode() { return Math.random().toString(36).substr(2,6).toUpperCase(); }
 
-  window.creerPartieEnLigne = function(nom) {
-    const code = genCode();
+  window.creerPartieEnLigne = function(nom, codeImpose) {
+    const code = codeImpose || genCode();
     set(pRef(code), {
       code, etat: 'attente', maquette: null,
       joueurs: { j1: { nom, score: 0 } },
@@ -95607,6 +95647,23 @@ function ajouterMsgTexteLocal(who, texte, moi) {
     update(ref(db, 'parties/' + code + '/scores'), { [idJ]: 0 });
     _ecouterPartie(code);
     setTimeout(() => { if (window._ecouterLobbyChat) window._ecouterLobbyChat(code); }, 500);
+  };
+
+  // Arrivée depuis le salon de la page d'accueil : attendre que la partie existe (invité)
+  window.attendrePartie = function(code, cb) {
+    let fini = false;
+    const unsub = onValue(pRef(code), snap => {
+      if (!fini && snap.exists()) { fini = true; unsub(); cb(); }
+    });
+  };
+
+  // Arrivée depuis le salon de la page d'accueil : attendre que l'ami rejoigne (créateur)
+  window.attendreAdversaire = function(code, cb) {
+    let fini = false;
+    const unsub = onValue(ref(db, 'parties/' + code + '/joueurs'), snap => {
+      const j = snap.val() || {};
+      if (!fini && Object.keys(j).length > 1) { fini = true; unsub(); cb(); }
+    });
   };
 
   window.demarrerPartieFirebase = function(code, maquette, duree) {
