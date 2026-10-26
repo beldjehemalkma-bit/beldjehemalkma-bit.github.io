@@ -4,6 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ALKAMO — Le Jeu des Mots</title>
+<script>
+(function(){try{var p=new URLSearchParams(location.search),r=p.get('role');if((r==='createur'||r==='invite')&&(p.get('code')||'').length>=4){document.documentElement.classList.add('accueil-direct');setTimeout(function(){document.documentElement.classList.remove('accueil-direct')},90000);}}catch(e){}})();
+</script>
+<style>
+html.accueil-direct body>*{visibility:hidden!important}
+html.accueil-direct::before{content:"Connexion à la partie…";position:fixed;top:0;left:0;right:0;bottom:0;z-index:2147483647;display:flex;align-items:center;justify-content:center;background:#0D0B1E;color:#FAD060;font:600 1.2rem 'Segoe UI',Tajawal,Arial,sans-serif;visibility:visible}
+</style>
 <style>
 :root{
   --purple:#534AB7;--purple-dark:#26215C;--purple-light:#EEEDFE;
@@ -95183,21 +95190,20 @@ function fermerOnline() {
 window._salonMonUid = null;
 
 // Arrivée depuis le salon de la page d'accueil (invitation acceptée) : on va directement aux maquettes
+function _finAccueilDirect() { document.documentElement.classList.remove('accueil-direct'); }
 function _demarrerDepuisAccueil(role, code, pseudo) {
   _modeEnLigne = true;
   window._nomJoueur = pseudo;
   if (role === 'createur') {
     window.creerPartieEnLigne(pseudo, code);
     document.getElementById('online-code-show').textContent = code;
-    document.getElementById('online-step1').style.display = 'none';
-    document.getElementById('online-step2').style.display = 'block';
-    document.getElementById('online-modal').classList.add('open');
-    window.attendreAdversaire(code, function() { window._onSalonInviteAccepted(code); });
+    window.attendreAdversaire(code, function() { window._onSalonInviteAccepted(code); _finAccueilDirect(); });
   } else {
     window._idAdverse = 'j1';
     window.attendrePartie(code, function() {
       window.rejoindrePatie(code, pseudo);
       openMaquette(true);
+      _finAccueilDirect();
       setTimeout(() => {
         const btnJ = document.getElementById('maq-btn-jouer');
         if (btnJ) btnJ.style.display = 'none';
@@ -95218,6 +95224,7 @@ function _demarrerDepuisAccueil(role, code, pseudo) {
   const lancer = () => {
     if (window.creerPartieEnLigne && window.attendrePartie && document.getElementById('online-modal')) _demarrerDepuisAccueil(role, code, pseudo);
     else if (++essais < 150) setTimeout(lancer, 100);
+    else _finAccueilDirect();
   };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', lancer); else lancer();
 })();
