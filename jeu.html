@@ -800,6 +800,12 @@ body:has(#s-home.active) .bouclier-corner { display:none; }
 .log-e{color:rgba(255,255,255,.8);}
 .chat-input-field{font-weight:600;}
 .chat-input-field::placeholder{color:rgba(255,255,255,.5);}
+.act-grid .btn{font-size:1.2rem;font-weight:900;padding:20px 28px;letter-spacing:.2px;}
+.chat-btn{font-size:.95rem;font-weight:800;padding:11px 8px;}
+.chg-lbl{font-size:.85rem;}
+.chg-info{font-size:.92rem;}
+.word-lbl{font-size:.8rem;}
+.gtile .tv{font-size:.82rem;}
 </style>
 </head>
 <body>
@@ -1020,11 +1026,8 @@ body:has(#s-home.active) .bouclier-corner { display:none; }
                  onkeydown="if(event.key==='Enter')envoyerMessage()">
           <button class="chat-send-btn" onclick="envoyerMessage()">➤</button>
         </div>
-        <div class="chat-btns" style="grid-template-columns:1fr 1fr;">
-          <button class="chat-btn g" onclick="sendChatMsg('accept')">✅ Accepter</button>
-          <button class="chat-btn r" onclick="sendChatMsg('refuse')">❌ Refuser</button>
-          <button class="chat-btn o" onclick="sendChatMsg('contest')">⚠️ Contester</button>
-          <button class="chat-btn y" onclick="sendChatMsg('bravo')">🎉 Bravo !</button>
+        <div class="chat-btns" style="grid-template-columns:1fr;">
+          <button class="chat-btn y" onclick="sendChatMsg('bravo')">🌹 Bravo !</button>
         </div>
       </div>
 
@@ -95118,7 +95121,7 @@ const CHAT_MSGS = {
   refuse:  { label: "❌ Refuser",     cls: "refuse"  },
   propose: { label: "🤝 Echanger", cls: "propose" },
   contest: { label: "⚠️ Contester", cls: "contest" },
-  bravo:   { label: "🎉 Bien joue !", cls: "bravo" },
+  bravo:   { label: "🌹 Bravo !", cls: "bravo" },
 };
 
 function toggleChat() {
@@ -95861,7 +95864,7 @@ function ajouterMsgTexteLocal(who, texte, moi) {
       const LABELS = {
         accept:{label:'✅ Accepter',cls:'accept'}, refuse:{label:'❌ Refuser',cls:'refuse'},
         propose:{label:'🤝 Echanger',cls:'propose'}, contest:{label:'⚠️ Contester',cls:'contest'},
-        bravo:{label:'🎉 Bien joué !',cls:'bravo'}
+        bravo:{label:'🌹 Bravo !',cls:'bravo'}
       };
       Object.values(msgs).sort((a,b) => a.ts - b.ts).slice(-30).forEach(msg => {
         if (msg.type === 'texte') {
