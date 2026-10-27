@@ -988,10 +988,10 @@ body:has(#s-home.active) .bouclier-corner { display:none; }
 
     <!-- Actions principales -->
     <div class="act-grid">
-      <button class="btn btn-p" onclick="validerMot()">✓ Valider le Mot</button>
+      <button class="btn btn-p" id="btn-val" onclick="validerMot()">✓ Valider le Mot</button>
       <button class="btn btn-out" onclick="clearWord()">✗ Effacer</button>
-      <button class="btn btn-gold" onclick="passerTour()">⏭ Passer le Tour</button>
-      <button class="btn btn-g" onclick="nouveauTheme()">🎲 Nouveau Thème</button>
+      <button class="btn btn-gold" id="btn-pass" onclick="passerTour()">⏭ Passer le Tour</button>
+      <button class="btn btn-g" id="btn-theme" onclick="nouveauTheme()">🎲 Nouveau Thème</button>
     </div>
 
     <!-- Rangée : Changer lettres + Chat côte à côte -->
@@ -93220,7 +93220,7 @@ function drawCase(silent) {
 }
 
 function nouveauTheme() {
-  if (_modeEnLigne && !estMonTour()) { log('⚠ Ce n\'est pas votre tour', 'bad'); return; }
+  if (_modeEnLigne && !estMonTour()) { flashHorsTour(); return; }
   if (G.themeChanged) { log('⚠ Un seul changement par tour !', 'bad'); return; }
   if (!_modeEnLigne && G.playedCaseIds && CASES.filter(x => !G.playedCaseIds.has(x.id)).length <= 1) { log('⚠ Dernière plaque : le changement de thème n\'est plus possible', 'bad'); return; }
   if (_modeEnLigne && G.themeRecu && G.curCase) { G.caseBag.unshift(G.curCase); G.themeRecu = false; }
@@ -93912,6 +93912,7 @@ function clearWord() {
 }
 
 function validerMot() {
+  if (_modeEnLigne && !estMonTour()) { flashHorsTour(); return; }
   if (G.word.length < 2) { log('⚠ Formez un mot d\'au moins 2 lettres !', 'bad'); return; }
   const word = buildWord();
   const ev = evalWordSync(word);
@@ -94106,6 +94107,7 @@ function confirmerFinPartie() {
 window.confirmerFinPartie = confirmerFinPartie;
 
 function passerTour() {
+  if (_modeEnLigne && !estMonTour()) { flashHorsTour(); return; }
   log(curP().name + ' passe son tour', '');
   G.passCount++;
   G.word = []; G.changeSel = []; G.changeMode = false;
@@ -94163,6 +94165,7 @@ function toggleChangeMode() {
 }
 
 function confirmerChange() {
+  if (_modeEnLigne && !estMonTour()) { flashHorsTour(); return; }
   if (G.timerExpired) {
     document.getElementById('tmr-exp').classList.add('show');
     log('⏰ Temps écoulé — changement non autorisé !', 'bad');
@@ -95384,6 +95387,18 @@ function onlineDemarrer() {
 let _modeEnLigne = false;
 let _partieDemar = false;
 
+function flashHorsTour() {
+  try {
+    const old = document.getElementById('flash-hors-tour'); if (old) old.remove();
+    const d = document.createElement('div');
+    d.id = 'flash-hors-tour';
+    d.textContent = '⏳ Ce n’est pas votre tour';
+    d.style.cssText = 'position:fixed;top:42%;left:50%;transform:translate(-50%,-50%);z-index:99999;background:rgba(20,20,40,.96);color:#FAD060;border:2px solid #FAD060;border-radius:16px;padding:18px 30px;font-size:1.4rem;font-weight:900;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,.6);pointer-events:none;max-width:90vw;';
+    document.body.appendChild(d);
+    setTimeout(() => { d.remove(); }, 1500);
+  } catch (e) {}
+}
+
 function estMonTour() {
   if (!_modeEnLigne) return true;
   if (!window._joueurActifId) return window._idJoueur === 'j1';
@@ -95411,7 +95426,11 @@ function afficherIndicateurTour() {
   }
 
 
-  ['btn-val','btn-pass','btn-chg-toggle'].forEach(id => {
+  ['btn-val','btn-pass','btn-theme'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.opacity = monTour ? '1' : '0.35';
+  });
+  ['btn-chg-toggle'].forEach(id => {
     const el = document.getElementById(id);
     if (!el) return;
     el.disabled = !monTour;
