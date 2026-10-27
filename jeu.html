@@ -93449,7 +93449,7 @@ function renderWord() {
     t.style.width = '44px'; t.style.height = '52px';
     t.style.cursor = 'pointer';
     const disp = item.letter === '*' ? (item.jokerAs || '?') : item.letter;
-    t.innerHTML = disp + '<span class="tv">★</span>';
+    t.innerHTML = disp + '<span class="tv">' + vL(item.letter) + '</span>';
 
     // Clic simple = retirer la lettre (retour au chevalet). Glisser = réordonner.
     t.addEventListener('mousedown', (e) => {
