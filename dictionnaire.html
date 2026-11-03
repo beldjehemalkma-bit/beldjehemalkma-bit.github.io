@@ -88,7 +88,7 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:16px 5
 
 /* BARRE RECHERCHE */
 .search-wrap{max-width:600px;margin:0 auto 12px;position:relative}
-.search-input{width:100%;padding:14px 50px 14px 20px;border-radius:50px;
+.search-input{width:100%;padding:14px 120px 14px 20px;border-radius:50px;
   background:rgba(255,255,255,.07);border:1px solid rgba(200,160,32,.25);
   color:#fff;font-size:16px;font-family:'DM Sans',sans-serif;outline:none;
   transition:all .2s}
@@ -1669,12 +1669,14 @@ function verifierMot(avecOuverture) {
 }
 
 // Recherche en direct
+var _tLive = null;
 function liveSearch(val) {
+  clearTimeout(_tLive);
   if (val.length < 2) {
     document.getElementById('search-result').style.display = 'none';
     return;
   }
-  if (val.length >= 3) verifierMot(false);
+  if (val.length >= 3) _tLive = setTimeout(function() { verifierMot(false); }, 500);
 }
 
 // Surligner le mot dans son thème
@@ -93239,12 +93241,14 @@ function voirDefinitionUniv(motForme, btn) {
     });
 }
 
+var _tLiveU = null;
 function liveSearchUniv(val) {
+  clearTimeout(_tLiveU);
   if (val.length < 3) {
     document.getElementById('search-result-univ').style.display = 'none';
     return;
   }
-  if (val.length >= 3) verifierMotUniv();
+  _tLiveU = setTimeout(function() { verifierMotUniv(); }, 600);
 }
 
 // Entrée clavier pour dico universel
