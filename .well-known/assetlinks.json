@@ -1,0 +1,8 @@
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "fr.alkamo.twa",
+    "sha256_cert_fingerprints": ["07:CE:F6:2C:D4:E6:17:B2:70:55:20:32:49:47:D5:EC:76:D2:4E:54:F7:03:D1:B6:98:A9:37:48:2B:00:52:27"]
+  }
+}]
