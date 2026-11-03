@@ -1723,6 +1723,7 @@ document.getElementById('search-input').addEventListener('keydown', function(e) 
 
 // ─── Switch entre les deux dicos ───
 function switchDico(type) {
+  if (type === 'universel' && typeof prepareSpell === 'function') prepareSpell();
   const lexical = document.getElementById('section-lexical');
   const universel = document.getElementById('section-universel');
   const btnLex = document.getElementById('btn-lexical');
@@ -93050,10 +93051,24 @@ zzzz/L'D'Q'
 `;
 let spellChecker = null;
 let spellCheckerReady = false;
-setTimeout(function() {
-  spellChecker = window.NSpell(NSPELL_AFF, NSPELL_DIC);
-  spellCheckerReady = true;
-}, 50);
+var _spellStarted = false;
+function prepareSpell() {
+  if (_spellStarted) return;
+  _spellStarted = true;
+  var res = document.getElementById('search-result-univ');
+  if (res) {
+    res.className = 'search-result';
+    res.style.display = 'block';
+    res.textContent = '⏳ Préparation du dictionnaire universel… (une seule fois, patientez quelques secondes)';
+  }
+  setTimeout(function() {
+    spellChecker = window.NSpell(NSPELL_AFF, NSPELL_DIC);
+    spellCheckerReady = true;
+    if (res) res.style.display = 'none';
+    var inp = document.getElementById('search-univ');
+    if (inp && inp.value.length >= 3) verifierMotUniv();
+  }, 150);
+}
 
 const ACCENT_MAP = {
   'a': ['a','à','â','ä'], 'e': ['e','é','è','ê','ë'],
