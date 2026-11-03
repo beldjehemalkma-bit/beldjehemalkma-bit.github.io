@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>Dictionnaire ALKAMO — 105 Thèmes</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,400&display=swap" rel="stylesheet">
 <style>
@@ -90,7 +90,7 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:16px 5
 .search-wrap{max-width:600px;margin:0 auto 12px;position:relative}
 .search-input{width:100%;padding:14px 50px 14px 20px;border-radius:50px;
   background:rgba(255,255,255,.07);border:1px solid rgba(200,160,32,.25);
-  color:#fff;font-size:1rem;font-family:'DM Sans',sans-serif;outline:none;
+  color:#fff;font-size:16px;font-family:'DM Sans',sans-serif;outline:none;
   transition:all .2s}
 .search-input:focus{border-color:var(--g);background:rgba(255,255,255,.1)}
 .search-input::placeholder{color:rgba(255,255,255,.35)}
@@ -1641,7 +1641,8 @@ function toggleTheme(card) {
 }
 
 // Vérifier un mot dans les deux dicos
-function verifierMot() {
+function verifierMot(avecOuverture) {
+  if (avecOuverture === undefined || avecOuverture === null || typeof avecOuverture === 'object') avecOuverture = true;
   const val = document.getElementById('search-input').value.trim();
   if (!val) return;
   const w = norm(val);
@@ -1658,7 +1659,7 @@ function verifierMot() {
     res.style.display = 'block';
     res.textContent = '✅ "' + val.toUpperCase() + '" — Trouvé dans le thème : ' + themeTrouve;
     // Ouvrir le thème correspondant
-    highlightInTheme(w, themeTrouve);
+    if (avecOuverture) highlightInTheme(w, themeTrouve);
     return;
   }
 
@@ -1673,7 +1674,7 @@ function liveSearch(val) {
     document.getElementById('search-result').style.display = 'none';
     return;
   }
-  if (val.length >= 3) verifierMot();
+  if (val.length >= 3) verifierMot(false);
 }
 
 // Surligner le mot dans son thème
