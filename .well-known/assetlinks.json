@@ -5,4 +5,12 @@
     "package_name": "fr.alkamo.twa",
     "sha256_cert_fingerprints": ["07:CE:F6:2C:D4:E6:17:B2:70:55:20:32:49:47:D5:EC:76:D2:4E:54:F7:03:D1:B6:98:A9:37:48:2B:00:52:27"]
   }
+},
+{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "fr.alkamo.ar.twa",
+    "sha256_cert_fingerprints": ["8F:FF:61:0E:C1:12:6E:21:FD:8A:BA:69:CB:08:E4:2C:DC:81:25:2A:A3:1D:56:75:83:2B:6B:EC:9E:3C:F7:0C"]
+  }
 }]
