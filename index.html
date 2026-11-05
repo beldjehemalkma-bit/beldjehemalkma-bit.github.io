@@ -679,7 +679,7 @@ function toggleMobileMenu() {
     <a href="jeu.html" class="btn-play" onclick="return checkAuth(event)">🎮 Jouer maintenant</a>
     <a href="dictionnaire.html" class="btn-rules" style="border-color:rgba(200,160,32,.3);color:var(--gl)">📚 Dictionnaire</a>
     <a href="#decouvrir-alkamo" class="btn-rules" style="border-color:rgba(200,160,32,.3);color:var(--gl)" onclick="dcvPlayAudio()">🎓 Découvrir ALKAMO</a>
-    <a href="installer.html" class="btn-rules" style="border-color:rgba(77,201,154,.5);color:var(--grl)">📲 Installer l'application</a>
+    <a href="installer.html" id="btn-inst-home" class="btn-rules" style="border-color:rgba(77,201,154,.5);color:var(--grl)">📲 Installer l'application</a>
   </div>
 
   <div class="hero-stats">
@@ -1376,6 +1376,13 @@ function dcvBuildCarousel() {
     setInterval(dcvPlayBoard, 1800);
   }
   dcvBuildCarousel();
+})();
+</script>
+<style>@media (display-mode: standalone),(display-mode: fullscreen),(display-mode: minimal-ui){#btn-inst-home{display:none!important}}</style>
+<script>
+(function(){
+  var app=(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true||String(document.referrer).indexOf('android-app://')===0;
+  if(app){var b=document.getElementById('btn-inst-home'); if(b) b.style.display='none';}
 })();
 </script>
 </body>
