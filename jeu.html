@@ -1128,7 +1128,7 @@ body:has(#s-home.active) .bouclier-corner { display:none; }
   </div>
 </div>
 
-<script>
+<script id="nspell-src">
 (() => {
   var __create = Object.create;
   var __defProp = Object.defineProperty;
@@ -92868,6 +92868,43 @@ function generateAccentVariants(word) {
   }
   return variants;
 }
+
+/* ── Dictionnaire universel : vérification dans un « worker » (ne bloque plus l'écran) ── */
+var _sw=null,_swSeq=0,_swPend={},_swReady=false,_swReadyCbs=[];
+function spellWorkerStart(){
+  if(_sw||!window.Worker) return;
+  try{
+    var src=document.getElementById('nspell-src').textContent;
+    var code='var window=self;'+src+
+      ';var sp=null,AM={a:["a","à","â","ä"],e:["e","é","è","ê","ë"],i:["i","î","ï"],o:["o","ô","ö"],u:["u","ù","û","ü"],c:["c","ç"],y:["y","ÿ"]};'+
+      'function gen(w){var v=[""];for(var k=0;k<w.length;k++){var o=AM[w[k]]||[w[k]],n=[];for(var i=0;i<v.length;i++)for(var j=0;j<o.length;j++)n.push(v[i]+o[j]);v=n;if(v.length>5000)break;}return v;}'+
+      'onmessage=function(e){var d=e.data;if(d.init){sp=window.NSpell(d.aff,d.dic);postMessage({ready:1});return;}'+
+      'var w=String(d.word).toLowerCase(),r={valid:false};if(sp.correct(w)){r={valid:true,form:w};}else{var v=gen(w);for(var i=0;i<v.length;i++){if(v[i]!==w&&sp.correct(v[i])){r={valid:true,form:v[i]};break;}}}'+
+      'postMessage({id:d.id,r:r});};';
+    _sw=new Worker(URL.createObjectURL(new Blob([code],{type:'text/javascript'})));
+    _sw.onmessage=function(e){
+      var d=e.data;
+      if(d.ready){_swReady=true;_swReadyCbs.forEach(function(f){try{f()}catch(x){}});_swReadyCbs=[];return;}
+      var cb=_swPend[d.id]; if(cb){delete _swPend[d.id];cb(d.r);}
+    };
+    _sw.onerror=function(){
+      _sw=null;_swReady=false;
+      var p=_swPend;_swPend={};
+      Object.keys(p).forEach(function(k){p[k](null);});
+    };
+    _sw.postMessage({init:1,aff:NSPELL_AFF,dic:NSPELL_DIC});
+  }catch(e){_sw=null;}
+}
+/* Renvoie une promesse : {valid:true/false,form} ou null si le worker est indisponible */
+function spellCheckAsync(word){
+  return new Promise(function(res){
+    spellWorkerStart();
+    if(!_sw){res(null);return;}
+    var id=++_swSeq;_swPend[id]=res;_sw.postMessage({id:id,word:word});
+  });
+}
+window.addEventListener('load',function(){setTimeout(spellWorkerStart,2500);});
+
 function checkWordLocalHunspell(wordRaw) {
   initSpellCheckerIfNeeded();
   const word = wordRaw.toLowerCase();
@@ -93998,25 +94035,28 @@ function confirmerMot() {
     // Vérifier d'abord en local (rapide) : thèmes, dico libre, puis dictionnaire français complet (Hunspell)
     const wUp = word.toUpperCase();
     const nw = norm(word);
-    const inLocal = DICO_LIBRE.has(wUp) ||
+    const inLocalFast = DICO_LIBRE.has(wUp) ||
       [...DICO_LIBRE].some(m => norm(m) === nw) ||
-      Object.values(DICT).some(arr => arr.some(d => norm(d) === nw)) ||
-      checkWordLocalHunspell(word) === true;
-    if (inLocal) {
+      Object.values(DICT).some(arr => arr.some(d => norm(d) === nw));
+    if (inLocalFast) {
       _confirmerMotFinalize(word, pIdx);
       return;
     }
-    // Sinon vérifier via Wiktionnaire
+    // Sinon : dictionnaire français complet (en arrière-plan, sans bloquer l'écran), puis Wiktionnaire
     log('🔍 Vérification de "' + word + '" en cours...', 'info');
-    verifierWiktionnaire(word).then(valide => {
-      if (valide) {
-        _confirmerMotFinalize(word, pIdx);
-      } else {
-        snd('err');
-        log('❌ "' + word + '" absent du dictionnaire', 'bad');
-        G.word = []; G.changeSel = []; G.changeMode = false;
-        renderAll();
-      }
+    spellCheckAsync(word).then(r => {
+      const okHun = (r === null) ? (checkWordLocalHunspell(word) === true) : (r.valid === true);
+      if (okHun) { _confirmerMotFinalize(word, pIdx); return; }
+      verifierWiktionnaire(word).then(valide => {
+        if (valide) {
+          _confirmerMotFinalize(word, pIdx);
+        } else {
+          snd('err');
+          log('❌ "' + word + '" absent du dictionnaire', 'bad');
+          G.word = []; G.changeSel = []; G.changeMode = false;
+          renderAll();
+        }
+      });
     });
     return;
   }
@@ -94763,32 +94803,39 @@ function dicoUnivVerifier() {
   var wUp = val.toUpperCase();
   res.dataset.motActuel = wUp;
 
-  var enLocal = checkWordLocalHunspell(val);
-  res.style.color = '';
-  if (enLocal === true) {
-    afficherSuccesUnivJeu(wUp, val.toLowerCase());
-    return;
-  }
-
-  // Mot absent du dictionnaire local : tenter un secours via Wiktionnaire (mots rares)
   res.className = 'dico-check-result';
   res.style.color = 'rgba(255,255,255,.6)';
-  res.textContent = '⏳ Vérification complémentaire (mot rare)...';
-  verifierWiktionnaire(val).then(function(valide) {
+  res.textContent = '⏳ Vérification en cours...';
+  spellCheckAsync(val).then(function(r) {
     if (res.dataset.motActuel !== wUp) return; // le champ a changé depuis
+    var enLocal = (r === null) ? (checkWordLocalHunspell(val) === true) : (r.valid === true);
     res.style.color = '';
-    if (valide) {
-      afficherSuccesUnivJeu(wUp, val.toLowerCase());
-    } else {
-      res.className = 'dico-check-result';
-      res.style.color = '#ff6b6b';
-      res.textContent = '❌ "' + wUp + '" — Absent du dictionnaire français';
+    if (enLocal === true) {
+      afficherSuccesUnivJeu(wUp, ((r && r.form) || val).toLowerCase());
+      return;
     }
+    // Mot absent du dictionnaire local : tenter un secours via Wiktionnaire (mots rares)
+    res.className = 'dico-check-result';
+    res.style.color = 'rgba(255,255,255,.6)';
+    res.textContent = '⏳ Vérification complémentaire (mot rare)...';
+    verifierWiktionnaire(val).then(function(valide) {
+      if (res.dataset.motActuel !== wUp) return; // le champ a changé depuis
+      res.style.color = '';
+      if (valide) {
+        afficherSuccesUnivJeu(wUp, val.toLowerCase());
+      } else {
+        res.className = 'dico-check-result';
+        res.style.color = '#ff6b6b';
+        res.textContent = '❌ "' + wUp + '" — Absent du dictionnaire français';
+      }
+    });
   });
 }
 
+var _tUnivLive = null;
 function dicoUnivLive(val) {
-  if (val.length >= 3) dicoUnivVerifier();
+  clearTimeout(_tUnivLive);
+  if (val.length >= 3) _tUnivLive = setTimeout(dicoUnivVerifier, 500);
   else document.getElementById('dico-check-result-univ').style.display = 'none';
 }
 

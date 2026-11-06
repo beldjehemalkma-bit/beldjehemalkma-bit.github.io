@@ -1777,7 +1777,7 @@ function estFormeValide(mot) {
 // ─── Dictionnaire français complet, intégré localement (aucun appel réseau) ───
 // Source : Hunspell/dictionary-fr (licence MPL-2.0), via https://github.com/wooorm/dictionaries
 </script>
-<script>
+<script id="nspell-src">
 (() => {
   var __create = Object.create;
   var __defProp = Object.defineProperty;
@@ -93053,24 +93053,44 @@ zzzz/L'D'Q'
 `;
 let spellChecker = null;
 let spellCheckerReady = false;
-var _spellStarted = false;
-function prepareSpell() {
-  if (_spellStarted) return;
-  _spellStarted = true;
-  var res = document.getElementById('search-result-univ');
-  if (res) {
-    res.className = 'search-result';
-    res.style.display = 'block';
-    res.textContent = '⏳ Préparation du dictionnaire universel… (une seule fois, patientez quelques secondes)';
-  }
-  setTimeout(function() {
-    spellChecker = window.NSpell(NSPELL_AFF, NSPELL_DIC);
-    spellCheckerReady = true;
-    if (res) res.style.display = 'none';
-    var inp = document.getElementById('search-univ');
-    if (inp && inp.value.length >= 3) verifierMotUniv();
-  }, 150);
+
+/* ── Dictionnaire universel : vérification dans un « worker » (ne bloque plus l'écran) ── */
+var _sw=null,_swSeq=0,_swPend={},_swReady=false,_swReadyCbs=[];
+function spellWorkerStart(){
+  if(_sw||!window.Worker) return;
+  try{
+    var src=document.getElementById('nspell-src').textContent;
+    var code='var window=self;'+src+
+      ';var sp=null,AM={a:["a","à","â","ä"],e:["e","é","è","ê","ë"],i:["i","î","ï"],o:["o","ô","ö"],u:["u","ù","û","ü"],c:["c","ç"],y:["y","ÿ"]};'+
+      'function gen(w){var v=[""];for(var k=0;k<w.length;k++){var o=AM[w[k]]||[w[k]],n=[];for(var i=0;i<v.length;i++)for(var j=0;j<o.length;j++)n.push(v[i]+o[j]);v=n;if(v.length>5000)break;}return v;}'+
+      'onmessage=function(e){var d=e.data;if(d.init){sp=window.NSpell(d.aff,d.dic);postMessage({ready:1});return;}'+
+      'var w=String(d.word).toLowerCase(),r={valid:false};if(sp.correct(w)){r={valid:true,form:w};}else{var v=gen(w);for(var i=0;i<v.length;i++){if(v[i]!==w&&sp.correct(v[i])){r={valid:true,form:v[i]};break;}}}'+
+      'postMessage({id:d.id,r:r});};';
+    _sw=new Worker(URL.createObjectURL(new Blob([code],{type:'text/javascript'})));
+    _sw.onmessage=function(e){
+      var d=e.data;
+      if(d.ready){_swReady=true;_swReadyCbs.forEach(function(f){try{f()}catch(x){}});_swReadyCbs=[];return;}
+      var cb=_swPend[d.id]; if(cb){delete _swPend[d.id];cb(d.r);}
+    };
+    _sw.onerror=function(){
+      _sw=null;_swReady=false;
+      var p=_swPend;_swPend={};
+      Object.keys(p).forEach(function(k){p[k](null);});
+    };
+    _sw.postMessage({init:1,aff:NSPELL_AFF,dic:NSPELL_DIC});
+  }catch(e){_sw=null;}
 }
+/* Renvoie une promesse : {valid:true/false,form} ou null si le worker est indisponible */
+function spellCheckAsync(word){
+  return new Promise(function(res){
+    spellWorkerStart();
+    if(!_sw){res(null);return;}
+    var id=++_swSeq;_swPend[id]=res;_sw.postMessage({id:id,word:word});
+  });
+}
+window.addEventListener('load',function(){setTimeout(spellWorkerStart,2500);});
+
+function prepareSpell() { spellWorkerStart(); }
 
 const ACCENT_MAP = {
   'a': ['a','à','â','ä'], 'e': ['e','é','è','ê','ë'],
@@ -93180,27 +93200,29 @@ function verifierMotUniv() {
   const motMaj = val.toUpperCase();
   res.dataset.motActuel = motMaj;
 
-  const resultat = checkWordLocal(val);
   res.style.display = 'block';
-  if (resultat.valid === null) {
-    res.className = 'search-result';
-    res.innerHTML = '⏳ Dictionnaire en cours de préparation, réessayez dans un instant...';
-  } else if (resultat.valid) {
-    res.className = 'search-result found-th';
-    const motAffiche = val.toUpperCase();
-    res.innerHTML = '✅ "' + motAffiche + '" — Mot valide dans le dictionnaire français' +
-      '<div style="margin-top:8px">' +
-      '<button onclick="voirDefinitionUniv(\'' + resultat.form.replace(/'/g, "\\'") + '\', this)" ' +
-      'style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);color:#fff;' +
-      'padding:6px 14px;border-radius:16px;font-size:.78rem;font-weight:700;cursor:pointer">' +
-      '📖 Voir la définition</button>' +
-      '<div id="def-univ-zone" style="margin-top:8px;font-size:.85rem;color:rgba(255,255,255,.75)"></div>' +
-      '</div>';
-  } else {
-    res.className = 'search-result';
-    res.innerHTML = '⏳ Vérification complémentaire (mot rare) via Wiktionnaire...';
-    tenterWiktionnaireSecours(motMaj, res);
-  }
+  res.className = 'search-result';
+  res.innerHTML = '⏳ Vérification en cours...';
+  spellCheckAsync(val).then(function(r) {
+    if (res.dataset.motActuel !== motMaj) return; // le champ a changé depuis
+    const resultat = (r === null) ? { valid: false } : r;
+    if (resultat.valid) {
+      res.className = 'search-result found-th';
+      const motAffiche = val.toUpperCase();
+      res.innerHTML = '✅ "' + motAffiche + '" — Mot valide dans le dictionnaire français' +
+        '<div style="margin-top:8px">' +
+        '<button onclick="voirDefinitionUniv(\'' + resultat.form.replace(/'/g, "\\'") + '\', this)" ' +
+        'style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);color:#fff;' +
+        'padding:6px 14px;border-radius:16px;font-size:.78rem;font-weight:700;cursor:pointer">' +
+        '📖 Voir la définition</button>' +
+        '<div id="def-univ-zone" style="margin-top:8px;font-size:.85rem;color:rgba(255,255,255,.75)"></div>' +
+        '</div>';
+    } else {
+      res.className = 'search-result';
+      res.innerHTML = '⏳ Vérification complémentaire (mot rare) via Wiktionnaire...';
+      tenterWiktionnaireSecours(motMaj, res);
+    }
+  });
 }
 
 // ─── Bonus : définition courte via Wiktionnaire (indépendant de la validation Hunspell) ───
