@@ -208,6 +208,7 @@ nav {
       <div class="tab" onclick="showTab('doublons')">🔍 Doublons</div>
       <div class="tab" onclick="showTab('qualite')">✅ Contrôle qualité</div>
       <div class="tab" onclick="showTab('parametres')">⚙️ Paramètres</div>
+      <div class="tab" onclick="showTab('visiteurs')">👥 Visiteurs</div>
     </div>
 
     <!-- TAB STATS -->
@@ -259,6 +260,26 @@ nav {
         <div class="card-title">🔍 Mots présents dans plusieurs thèmes</div>
         <div id="doublons-loading" class="loading">⏳ Analyse en cours...</div>
         <div id="doublons-content" class="hidden"></div>
+      </div>
+    </div>
+
+    <!-- TAB VISITEURS -->
+    <div id="tab-visiteurs" class="tab-content">
+      <div class="stats-grid" id="vis-stats">
+        <div class="stat-box"><div class="stat-n" id="vis-total">–</div><div class="stat-l">Visites</div></div>
+        <div class="stat-box"><div class="stat-n" id="vis-jour">–</div><div class="stat-l">Aujourd'hui</div></div>
+        <div class="stat-box"><div class="stat-n" id="vis-app">–</div><div class="stat-l">Ouvertures en appli</div></div>
+        <div class="stat-box"><div class="stat-n" id="vis-inst">–</div><div class="stat-l">Installations</div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">👥 Dernières visites</div>
+        <button class="btn btn-gold btn-sm" onclick="chargerVisiteurs()" style="margin-bottom:14px">🔄 Actualiser</button>
+        <div id="vis-msg" class="loading">⏳ Chargement...</div>
+        <div style="overflow-x:auto"><table class="theme-table" id="vis-table" style="display:none">
+          <thead><tr><th>Date et heure</th><th>Version</th><th>Pays</th><th>Ville</th><th>Mode</th><th>Appareil</th></tr></thead>
+          <tbody id="vis-body"></tbody>
+        </table></div>
+        <p style="margin-top:14px;font-size:.75rem;color:var(--muted)">Les 300 dernières visites. L'adresse IP n'est jamais enregistrée. Vos propres visites ne sont pas comptées.</p>
       </div>
     </div>
 
@@ -352,9 +373,47 @@ function changerPwd() {
 function showTab(name) {
   document.querySelectorAll('.tab').forEach((t,i) => t.classList.remove('active'));
   document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-  const tabs = ['stats','convertisseur','doublons','qualite','parametres'];
+  const tabs = ['stats','convertisseur','doublons','qualite','parametres','visiteurs'];
+  if (name === 'visiteurs') chargerVisiteurs();
   document.querySelectorAll('.tab')[tabs.indexOf(name)].classList.add('active');
   document.getElementById('tab-' + name).classList.add('active');
+}
+
+// ═══════════════════════════════════════════
+// VISITEURS (lecture Firebase en REST)
+// ═══════════════════════════════════════════
+const DB_URL = 'https://alkamo-3c76e-default-rtdb.firebaseio.com';
+try { localStorage.setItem('alk_no_count', '1'); } catch (e) {}
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+async function chargerVisiteurs() {
+  const msg = document.getElementById('vis-msg');
+  msg.style.display = 'block'; msg.textContent = '⏳ Chargement...';
+  try {
+    const [r1, r2, r3] = await Promise.all([
+      fetch(DB_URL + '/visites.json?orderBy="$key"&limitToLast=300'),
+      fetch(DB_URL + '/visites.json?shallow=true'),
+      fetch(DB_URL + '/installations.json?shallow=true')
+    ]);
+    if (!r1.ok) throw new Error(r1.status);
+    const data = (await r1.json()) || {};
+    const total = Object.keys((await r2.json()) || {}).length;
+    const inst = Object.keys((await r3.json()) || {}).length;
+    const rows = Object.values(data).sort((a, b) => (b.ts || 0) - (a.ts || 0));
+    const j0 = new Date(); j0.setHours(0, 0, 0, 0);
+    document.getElementById('vis-total').textContent = total;
+    document.getElementById('vis-jour').textContent = rows.filter(v => v.ts >= j0.getTime()).length;
+    document.getElementById('vis-app').textContent = rows.filter(v => v.mode === 'app').length;
+    document.getElementById('vis-inst').textContent = inst;
+    document.getElementById('vis-body').innerHTML = rows.map(v =>
+      '<tr><td>' + (v.ts ? new Date(v.ts).toLocaleString('fr-FR') : '') + '</td><td>' + (v.lang === 'ar' ? 'Arabe' : 'Français') +
+      '</td><td>' + esc(v.pays) + '</td><td>' + esc(v.ville) + '</td><td>' + (v.mode === 'app' ? 'Application' : 'Site web') +
+      '</td><td>' + esc(v.appareil) + '</td></tr>').join('');
+    document.getElementById('vis-table').style.display = rows.length ? 'table' : 'none';
+    msg.textContent = rows.length ? '' : 'Aucune visite enregistrée pour le moment.';
+    if (!rows.length) msg.style.display = 'block'; else msg.style.display = 'none';
+  } catch (e) {
+    msg.textContent = '❌ Lecture impossible (' + e.message + '). Vérifiez les règles Firebase pour « visites » et « installations ».';
+  }
 }
 
 // ═══════════════════════════════════════════
