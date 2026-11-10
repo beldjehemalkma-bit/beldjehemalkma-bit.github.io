@@ -265,6 +265,16 @@ nav {
 
     <!-- TAB VISITEURS -->
     <div id="tab-visiteurs" class="tab-content">
+      <style>
+        .container:has(#tab-visiteurs.active){max-width:1500px}
+        #tab-visiteurs .theme-table{font-size:1.2rem;font-weight:700;color:#fff}
+        #tab-visiteurs .theme-table th{font-size:1.05rem;font-weight:800;text-transform:none;color:#e8e6f5;padding:14px 18px}
+        #tab-visiteurs .theme-table td{padding:14px 18px}
+        #tab-visiteurs .stat-l{font-size:1.05rem;font-weight:700;text-transform:none}
+        #tab-visiteurs .stat-n{font-size:2.2rem}
+        #tab-visiteurs .card-title{font-size:1.2rem}
+        #tab-visiteurs .card p{font-size:1rem !important;font-weight:600}
+      </style>
       <div class="stats-grid" id="vis-stats">
         <div class="stat-box"><div class="stat-n" id="vis-total">–</div><div class="stat-l">Visites</div></div>
         <div class="stat-box"><div class="stat-n" id="vis-jour">–</div><div class="stat-l">Aujourd'hui</div></div>
