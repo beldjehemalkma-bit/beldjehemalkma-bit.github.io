@@ -93324,6 +93324,10 @@ fetch('dictionnaire.json')
     Object.values(data).forEach(themes => {
       Object.values(themes).forEach(mots => { total += mots.length; });
     });
+    // La recherche « Dictionnaire Lexical » utilise toujours la liste à jour du JSON
+    Object.values(data).forEach(themes => {
+      Object.entries(themes).forEach(([t, mots]) => { DICT_DATA[t] = mots; });
+    });
     // Pour chaque case, utiliser sa maquette exacte (data-maquette) pour retrouver
     // la vraie liste de mots dans le JSON, et l'utiliser pour les mots ET le compteur.
     document.querySelectorAll('.theme-card').forEach(card => {
