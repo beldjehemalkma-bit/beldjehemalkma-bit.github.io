@@ -4315,6 +4315,7 @@
       "BUNKER",
       "BUT",
       "BUTEUR",
+      "BUTS",
       "CABRER",
       "CADET",
       "CADOR",
@@ -4889,8 +4890,7 @@
       "XARE",
       "XYSTE",
       "YACHT",
-      "YOGA",
-      "ZUMBA"
+      "YOGA"
     ],
     "RELIGION": [
       "ABBAYE",
@@ -69547,6 +69547,7 @@
       "BUNKER",
       "BUT",
       "BUTEUR",
+      "BUTS",
       "CABRER",
       "CADET",
       "CADOR",
@@ -70121,8 +70122,7 @@
       "XARE",
       "XYSTE",
       "YACHT",
-      "YOGA",
-      "ZUMBA"
+      "YOGA"
     ],
     "URBANISME": [
       "ABRI",
