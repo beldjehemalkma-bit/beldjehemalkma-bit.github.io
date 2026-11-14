@@ -186,6 +186,14 @@ nav {
   .theme-table th{font-size:.9rem !important}
   .btn-sm{font-size:1rem !important}
   .card p{font-size:1rem !important}
+  /* Propositions : chaque mot devient une carte, sans défilement latéral */
+  .container:has(#tab-propositions.active){padding:20px 10px}
+  #tab-propositions .theme-table,#tab-propositions .theme-table *{box-sizing:border-box}
+  #tab-propositions .theme-table thead{display:none}
+  #tab-propositions .theme-table,#tab-propositions .theme-table tbody,#tab-propositions .theme-table tr,#tab-propositions .theme-table td{display:block;width:100%}
+  #tab-propositions .theme-table tr{border:1px solid var(--border);border-radius:12px;margin-bottom:12px;padding:8px 4px;background:rgba(255,255,255,.04)}
+  #tab-propositions .theme-table td{display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:1.1rem;padding:8px 12px;border:0}
+  #tab-propositions .theme-table td::before{content:attr(data-l);color:#f0c75e;font-weight:800;font-size:1rem}
 }
 </style>
 </head>
