@@ -1118,6 +1118,18 @@ body:has(#s-home.active) .bouclier-corner { display:none; }
   </div>
 </div>
 
+<!-- Modal Proposer un mot au dictionnaire -->
+<div class="ov" id="m-propose">
+  <div class="modal">
+    <h2>💡 Mot non reconnu</h2>
+    <p id="prop-msg"></p>
+    <div class="mbtns" id="prop-btns">
+      <button class="btn btn-out" onclick="closeModal('m-propose')">Fermer</button>
+      <button class="btn btn-p" onclick="envoyerPropositionMot()">Proposer ce mot au dictionnaire</button>
+    </div>
+  </div>
+</div>
+
 <!-- Modal Joker -->
 <div class="ov" id="m-joker">
   <div class="modal">
@@ -95997,6 +96009,24 @@ function ajouterMsgTexteLocal(who, texte, moi) {
     });
   };
 
+  // ══ PROPOSITIONS AU DICTIONNAIRE (lues uniquement par l'admin) ══
+  window.proposerMotDico = async function(mot, theme, type, fr) {
+    try {
+      const u = auth.currentUser;
+      if (!u) return false;
+      const N = t => String(t||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().replace(/[^A-Z0-9]/g,'_');
+      const cle = N(mot) + '__' + N(theme);
+      const pseudo = String(u.email || 'joueur').split('@')[0].slice(0, 30).replace(/[<>]/g, '');
+      const base = 'propositions/' + cle;
+      const maj = {};
+      maj[base + '/mot'] = String(mot).toUpperCase().slice(0, 40);
+      maj[base + '/theme'] = String(theme).slice(0, 80);
+      maj[base + '/votes/' + u.uid] = { type: type === 'deux' ? 'deux' : 'un', pseudo, ts: Date.now(), fr: fr === true };
+      await update(ref(db), maj);
+      return true;
+    } catch (e) { console.warn('proposition non envoyée', e); return false; }
+  };
+
   window.ecouterDefis = function(code) {
     onValue(ref(db, 'parties/' + code + '/defis'), snap => {
       const defis = snap.val();
@@ -96339,8 +96369,10 @@ function ouvrirDefi(word, pIdx) {
   if (adversaire && adversaire.isBot) {
     snd('err');
     log('❌ "' + word + '" non reconnu — ordinateur refuse.', 'bad');
+    const _thBot = G.curCase && G.curCase.th;
     G.word = []; G.changeSel = []; G.changeMode = false;
     renderAll();
+    proposerApresRefus(word, _thBot);
     return;
   }
   const nomAdv = adversaire ? adversaire.name : "l'adversaire";
@@ -96350,6 +96382,50 @@ function ouvrirDefi(word, pIdx) {
     '<span style="color:rgba(255,255,255,.8)">' + nomAdv + ', acceptez-vous ce mot ?</span>';
   snd('err');
   openModal('m-defi');
+}
+
+// ══ Proposer un mot au dictionnaire (relu et décidé par l'administrateur) ══
+G._nbPropositions = 0;
+function _motExisteEnFrancais(word) {
+  if (!estFormeValide(word)) return Promise.resolve(false);
+  return spellCheckAsync(word).then(r => {
+    const okHun = (r === null) ? (checkWordLocalHunspell(word) === true) : (r.valid === true);
+    if (okHun) return true;
+    return verifierWiktionnaire(word).then(v => v === true);
+  }).catch(() => false);
+}
+
+// Mot accepté par l'adversaire : fiche « accepté par les 2 joueurs »
+function fichePropositionDeux(word, theme) {
+  if (!theme || !window.proposerMotDico) return;
+  _motExisteEnFrancais(word).then(fr => window.proposerMotDico(word, theme, 'deux', fr));
+}
+
+// Mot refusé : on propose le bouton seulement si le mot existe en français
+function proposerApresRefus(word, theme) {
+  if (!theme || !window.proposerMotDico) return;
+  if (G._nbPropositions >= 3) return;
+  _motExisteEnFrancais(word).then(fr => {
+    if (!fr) return;
+    G._propMot = word; G._propTheme = theme;
+    document.getElementById('prop-btns').style.display = '';
+    document.getElementById('prop-msg').innerHTML =
+      '<strong style="color:var(--gold-light)">"' + word + '"</strong> n\'a pas été reconnu pour le thème « ' + theme + ' ».<br><br>' +
+      '<span style="color:rgba(255,255,255,.8)">Il appartient pourtant à la langue française ? Proposez-le : s\'il appartient au champ lexical du thème, il pourra rejoindre le dictionnaire.</span>';
+    openModal('m-propose');
+  });
+}
+
+function envoyerPropositionMot() {
+  const w = G._propMot, t = G._propTheme;
+  window.proposerMotDico(w, t, 'un', true).then(ok => {
+    document.getElementById('prop-btns').style.display = 'none';
+    document.getElementById('prop-msg').innerHTML = ok
+      ? '✓ Merci ! Votre proposition sera examinée.'
+      : 'Proposition non envoyée (connexion ou compte requis).';
+    if (ok) G._nbPropositions++;
+    setTimeout(() => closeModal('m-propose'), 1600);
+  });
 }
 
 // Affiche la fenêtre de défi CHEZ L'ADVERSAIRE (mot proposé par l'autre joueur en ligne)
@@ -96397,6 +96473,9 @@ function traiterReponseDefi(accepte) {
   const pIdx = G._defiPIdx !== undefined ? G._defiPIdx : 0;
   const p = G.players && G.players[pIdx];
   if (!p) return;
+  const _thDefi = G.curCase && !G.curCase.free ? G.curCase.th : null;
+  if (accepte) fichePropositionDeux(word, _thDefi);
+  else proposerApresRefus(word, _thDefi);
 
   let score = 0;
   if (accepte) {
