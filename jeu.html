@@ -93916,10 +93916,27 @@ function evalWordSync(word) {
     const n = norm(word);
     
     // Vérification avec formes flexionnelles (sing/plur/féminin)
+    // Les formes dérivées (pluriel, féminin...) ne sont acceptées que si la forme tapée
+    // existe elle-même en français (dictionnaire universel ou dictionnaire français complet)
+    function formeExisteEnFrancais(mot) {
+      const nm = norm(mot);
+      if (!window._DICO_NORM || window._DICO_NORM_N !== DICO_LIBRE.size) {
+        window._DICO_NORM = new Set([...DICO_LIBRE].map(m => norm(m)));
+        window._DICO_NORM_N = DICO_LIBRE.size;
+      }
+      if (window._DICO_NORM.has(nm)) return true;
+      try { return checkWordLocalHunspell(mot) === true; } catch (e) { return false; }
+    }
     function formesTrouvees(mot) {
       const nm = norm(mot);
       // 1. Exact
       if (words.some(w => norm(w) === nm)) return true;
+      // 2 à 8 : formes dérivées → seulement si la forme tapée existe en français
+      if (!formesDeriveesTrouvees(mot)) return false;
+      return formeExisteEnFrancais(mot);
+    }
+    function formesDeriveesTrouvees(mot) {
+      const nm = norm(mot);
       // 2. Pluriel → singulier (JOUETS → JOUET)
       if (nm.endsWith('S') && words.some(w => norm(w) === nm.slice(0,-1))) return true;
       // 3. Singulier → pluriel (JOUET → JOUETS)
