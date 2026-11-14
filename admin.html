@@ -502,7 +502,7 @@ async function chargerPropositions() {
         nb: v.length, deux: v.filter(x => x.type === 'deux').length,
         fr: v.some(x => x.fr === true), pseudos: [...new Set(v.map(x => x.pseudo))].join(', '),
         ts: Math.max(0, ...v.map(x => x.ts || 0)) };
-    }).filter(x => x.mot && x.statut === 'attente')
+    }).filter(x => x.mot && !/[\u0600-\u06FF]/.test(x.mot) && x.statut === 'attente')
       .sort((a, b) => (b.deux - a.deux) || (b.nb - a.nb) || (b.ts - a.ts));
     document.getElementById('prop-body').innerHTML = _props.map((x, i) => {
       const dd = _dejaDansDico(x.mot, x.theme);
@@ -533,7 +533,7 @@ async function decider(i, statut) {
 function afficherRetenus(data) {
   const par = {};
   Object.values(data).forEach(d => {
-    if (d.statut === 'retenu' && d.mot) (par[d.theme] = par[d.theme] || []).push(d.mot);
+    if (d.statut === 'retenu' && d.mot && !/[\u0600-\u06FF]/.test(d.mot)) (par[d.theme] = par[d.theme] || []).push(d.mot);
   });
   const lignes = Object.keys(par).sort().map(t => t + ' : ' + par[t].sort().join(', '));
   document.getElementById('prop-retenus').textContent = lignes.length ? lignes.join('\n') : 'Aucun mot retenu.';
@@ -554,7 +554,7 @@ async function viderRetenus() {
     const r = await fetch(DB_URL + '/propositions.json?auth=' + A);
     const data = (await r.json()) || {};
     const maj = {};
-    Object.entries(data).forEach(([k, d]) => { if (d.statut === 'retenu' || d.statut === 'refuse') maj[k] = null; });
+    Object.entries(data).forEach(([k, d]) => { if ((d.statut === 'retenu' || d.statut === 'refuse') && !/[\u0600-\u06FF]/.test(d.mot)) maj[k] = null; });
     await fetch(DB_URL + '/propositions.json?auth=' + A, { method: 'PATCH', body: JSON.stringify(maj) });
     chargerPropositions();
   } catch (e) { alert('Échec (' + e.message + ')'); }
