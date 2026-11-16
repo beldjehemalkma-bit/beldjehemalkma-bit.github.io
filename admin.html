@@ -322,7 +322,7 @@ nav {
         <button class="btn btn-gold btn-sm" onclick="chargerVisiteurs()" style="margin-bottom:14px">🔄 Actualiser</button>
         <div id="vis-msg" class="loading">⏳ Chargement...</div>
         <div style="overflow-x:auto"><table class="theme-table" id="vis-table" style="display:none">
-          <thead><tr><th>Date et heure</th><th>Version</th><th>Pays</th><th>Ville (approx.)</th><th>Mode</th><th>Appareil</th></tr></thead>
+          <thead><tr><th>Date et heure</th><th>Version</th><th>Pays</th><th>Ville (approx.)</th><th>Mode</th><th>Appareil</th><th>Région</th><th>Opérateur</th><th>Provenance</th></tr></thead>
           <tbody id="vis-body"></tbody>
         </table></div>
         <p style="margin-top:14px;font-size:.75rem;color:var(--muted)">Les 300 dernières visites. L'adresse IP n'est jamais enregistrée. Vos propres visites ne sont pas comptées.</p>
@@ -461,7 +461,7 @@ async function chargerVisiteurs() {
     document.getElementById('vis-body').innerHTML = rows.map(v =>
       '<tr><td>' + (v.ts ? new Date(v.ts).toLocaleString('fr-FR') : '') + '</td><td>' + (v.lang === 'ar' ? 'Arabe' : 'Français') +
       '</td><td>' + esc(v.pays) + '</td><td>' + esc(v.ville) + '</td><td>' + (v.mode === 'app' ? 'Application' : 'Site web') +
-      '</td><td>' + esc(v.appareil) + '</td></tr>').join('');
+      '</td><td>' + esc(v.appareil) + '</td><td>' + esc(v.region) + '</td><td>' + esc(v.operateur) + '</td><td>' + esc(v.source) + '</td></tr>').join('');
     var _ths=[].map.call(document.querySelectorAll('#vis-table thead th'),function(t){return t.textContent;});
     document.querySelectorAll('#vis-body tr').forEach(function(tr){[].forEach.call(tr.children,function(td,i){td.setAttribute('data-l',_ths[i]||'');});});
     document.getElementById('vis-table').style.display = rows.length ? 'table' : 'none';
