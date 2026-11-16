@@ -13,6 +13,27 @@ const cfg = {
   appId: "1:101034335840:web:f433830959af109193ad05"
 };
 
+function nettoyer(t, n) { return String(t || '').replace(/[<>]/g, '').trim().slice(0, n); }
+
+// D'où vient le visiteur (site qui a donné le lien) — direct si aucun
+function provenance() {
+  try {
+    if (String(document.referrer).indexOf('android-app://') === 0) return 'application';
+    if (!document.referrer) return 'direct';
+    const h = new URL(document.referrer).hostname.replace(/^www\./, '').toLowerCase();
+    if (!h || h === location.hostname.replace(/^www\./, '').toLowerCase()) return 'direct';
+    if (/facebook|fb\.com|fb\.me/.test(h)) return 'facebook';
+    if (/google/.test(h)) return 'google';
+    if (/whatsapp|wa\.me/.test(h)) return 'whatsapp';
+    if (/instagram/.test(h)) return 'instagram';
+    if (/youtube|youtu\.be/.test(h)) return 'youtube';
+    if (/itch\.io/.test(h)) return 'itch.io';
+    if (/t\.co$|twitter|x\.com/.test(h)) return 'x';
+    if (/bing|duckduckgo|yahoo|ecosia|qwant/.test(h)) return 'moteur de recherche';
+    return nettoyer(h, 30);
+  } catch (e) { return 'direct'; }
+}
+
 function lire(k, s) { try { return (s ? sessionStorage : localStorage).getItem(k); } catch (e) { return null; } }
 function ecrire(k, v, s) { try { (s ? sessionStorage : localStorage).setItem(k, v); } catch (e) {} }
 
@@ -42,22 +63,26 @@ async function compter() {
     const db = getDatabase(initializeApp(cfg, 'compteur'));
 
     // Pays / ville (l'adresse IP n'est jamais enregistrée)
-    let pays = '?', ville = '?';
+    let pays = '?', ville = '?', region = '', operateur = '';
     try {
       const c = new AbortController(); const t = setTimeout(() => c.abort(), 4000);
       const r = await fetch('https://get.geojs.io/v1/ip/geo.json', { signal: c.signal });
       clearTimeout(t);
       const g = await r.json();
       pays = g.country || '?'; ville = g.city || g.region || '?';
+      region = nettoyer(g.region, 60);
+      operateur = nettoyer(String(g.organization_name || g.organization || '').replace(/^AS\d+\s*/i, ''), 60);
     } catch (e) {}
 
     const base = { ts: serverTimestamp(), lang: LANG, pays: pays, ville: ville,
                    appareil: /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent) ? 'mobile' : 'ordinateur' };
+    if (region) base.region = region;
+    if (operateur) base.operateur = operateur;
 
     // 1 visite par session
     if (!lire('alk_v', true)) {
       ecrire('alk_v', '1', true);
-      await push(ref(db, 'visites'), Object.assign({ mode: enApp ? 'app' : 'web' }, base));
+      await push(ref(db, 'visites'), Object.assign({ mode: enApp ? 'app' : 'web', source: provenance() }, base));
     }
     // Installation : 1 fois par appareil (première ouverture en application)
     if (enApp && !lire('alk_inst')) {
