@@ -16,7 +16,22 @@ const cfg = {
 function lire(k, s) { try { return (s ? sessionStorage : localStorage).getItem(k); } catch (e) { return null; } }
 function ecrire(k, v, s) { try { (s ? sessionStorage : localStorage).setItem(k, v); } catch (e) {} }
 
-(async function () {
+// Une visite n'est comptée qu'après un vrai geste du visiteur (toucher, clic, touche, défilement) :
+// les robots et les analyseurs automatiques n'en font pas et ne sont donc pas comptés.
+let _demarre = false;
+function surGeste() {
+  if (_demarre) return;
+  _demarre = true;
+  ['pointerdown', 'touchstart', 'keydown', 'scroll', 'wheel'].forEach(function (e) {
+    window.removeEventListener(e, surGeste, true);
+  });
+  compter();
+}
+['pointerdown', 'touchstart', 'keydown', 'scroll', 'wheel'].forEach(function (e) {
+  window.addEventListener(e, surGeste, { capture: true, passive: true });
+});
+
+async function compter() {
   try {
     // Ne pas compter l'administrateur (posé par la page admin)
     if (lire('alk_no_count') === '1') return;
@@ -56,4 +71,4 @@ function ecrire(k, v, s) { try { (s ? sessionStorage : localStorage).setItem(k, 
       push(ref(db, 'installations'), Object.assign({ source: 'navigateur' }, base)).catch(function () {});
     });
   } catch (e) { /* le compteur ne doit jamais gêner le jeu */ }
-})();
+}
