@@ -94195,10 +94195,21 @@ function _indiceFormeExiste(mot) {
 }
 
 // Cherche, dans le lexique du thème en cours, les meilleurs mots formables avec ces lettres (3 au plus).
-function indiceMeilleursMots(lettres, exclure) {
-  const c = G.curCase;
-  if (!c || c.free) return null;
-  const liste = DICT[c.th] || [];
+function indiceMeilleursMots(lettres, exclure, cas) {
+  const c = cas || G.curCase;
+  if (!c) return [];
+  let liste;
+  if (c.free) {
+    // Case au choix : dictionnaire libre du jeu, mots de la longueur exigée par la case, formes acceptées par le jeu
+    if (!window._indiceLibre || window._indiceLibreN !== DICO_LIBRE.size) {
+      window._indiceLibre = [...DICO_LIBRE].filter(m => /^[A-ZÀ-ÖØ-Þ]+$/i.test(m));
+      window._indiceLibreN = DICO_LIBRE.size;
+    }
+    const mn = c.minL || 3, mx = c.maxL || 10;
+    liste = window._indiceLibre.filter(m => { const l = norm(m).length; return l >= mn && l <= mx && estFormeValide(m); });
+  } else {
+    liste = DICT[c.th] || [];
+  }
   const stock = {}; let jokers = 0;
   lettres.forEach(l => { if (l === '*') jokers++; else stock[l] = (stock[l] || 0) + 1; });
   const vues = new Set(); const trouves = [];
@@ -94217,10 +94228,21 @@ function indiceMeilleursMots(lettres, exclure) {
     // Les mots de 10 lettres peuvent être tronqués dans un lexique : on exige qu'ils existent en français
     if (n.length === 10 && !_indiceFormeExiste(w)) return;
     if (c.bonus) score += c.bonus;
-    if (norm(c.th) === n) score *= 2;
+    if (!c.free && norm(c.th) === n) score *= 2;
     trouves.push({ mot: n, score: score });
   });
   trouves.sort((a, b) => (b.score - a.score) || (b.mot.length - a.mot.length) || (a.mot < b.mot ? -1 : 1));
+  if (c.free) {
+    // Cases au choix : on ne propose que des noms communs du français (le dictionnaire libre contient aussi des noms propres)
+    const sel = [];
+    for (const t of trouves) {
+      let ok = true;
+      try { ok = checkWordLocalHunspell(t.mot) === true; } catch (e) { ok = true; }
+      if (ok) sel.push(t);
+      if (sel.length === 3) break;
+    }
+    return sel;
+  }
   return trouves.slice(0, 3);
 }
 function indiceMeilleurMot(lettres) { const l = indiceMeilleursMots(lettres, null); return l.length ? l[0] : null; }
@@ -94247,20 +94269,29 @@ function _indiceAfficher(html) {
 // joueur : le joueur humain qui vient de jouer ; motJoue : son mot validé (ou null s'il passe / change ses lettres)
 function afficherIndice(joueur, motJoue, scoreJoue) {
   try {
-    if (!joueur || joueur.isBot || !G.curCase || G.curCase.free) return;
-    const liste = indiceMeilleursMots(joueur.letters || [], motJoue);
-    const b = liste.length ? liste[0] : null;
-    const fmt = liste.map(x => '<span style="color:var(--gold-light,#FAD060)">' + x.mot + '</span> (' + x.score + ')').join(' · ');
-    let msg;
-    if (motJoue) {
-      if (!b || b.score <= scoreJoue) msg = '🏆 Bravo : c\'était le meilleur mot possible avec vos lettres !';
-      else msg = '💡 Avec vos lettres, vous pouviez aussi former :<br>' + fmt;
-    } else {
-      msg = b ? '💡 Vous pouviez former :<br>' + fmt
-              : 'Aucun mot de ce thème n\'était possible avec vos lettres.';
-    }
-    _indiceAfficher(msg);
-  } catch (e) { /* l'indice ne doit jamais gêner le jeu */ }
+    if (!joueur || joueur.isBot || !G.curCase) return;
+    // On fige les lettres et la case maintenant (le tour va changer), et on calcule juste après,
+    // pour que l'écran ne reste jamais bloqué pendant la recherche.
+    const lettres = (joueur.letters || []).slice();
+    const cas = G.curCase;
+    setTimeout(function () {
+      try {
+        const liste = indiceMeilleursMots(lettres, motJoue, cas);
+        const b = liste.length ? liste[0] : null;
+        const fmt = liste.map(x => '<span style="color:var(--gold-light,#FAD060)">' + x.mot + '</span> (' + x.score + ')').join(' · ');
+        let msg;
+        if (motJoue) {
+          if (!b || b.score <= scoreJoue) msg = '🏆 Bravo : c\'était le meilleur mot possible avec vos lettres !';
+          else msg = '💡 Avec vos lettres, vous pouviez aussi former :<br>' + fmt;
+        } else {
+          msg = b ? '💡 Vous pouviez former :<br>' + fmt
+                  : (cas.free ? 'Aucun mot de la longueur demandée n\'était possible avec vos lettres.'
+                              : 'Aucun mot de ce thème n\'était possible avec vos lettres.');
+        }
+        _indiceAfficher(msg);
+      } catch (e) { /* l'indice ne doit jamais gêner le jeu */ }
+    }, 60);
+  } catch (e) { /* idem */ }
 }
 
 function passerTour() {
