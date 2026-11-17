@@ -94194,17 +94194,18 @@ function _indiceFormeExiste(mot) {
   } catch (e) { return false; }
 }
 
-// Cherche, dans le lexique du thème en cours, le meilleur mot formable avec ces lettres.
-function indiceMeilleurMot(lettres) {
+// Cherche, dans le lexique du thème en cours, les meilleurs mots formables avec ces lettres (3 au plus).
+function indiceMeilleursMots(lettres, exclure) {
   const c = G.curCase;
   if (!c || c.free) return null;
   const liste = DICT[c.th] || [];
   const stock = {}; let jokers = 0;
   lettres.forEach(l => { if (l === '*') jokers++; else stock[l] = (stock[l] || 0) + 1; });
-  const vues = new Set(); let meilleur = null;
+  const vues = new Set(); const trouves = [];
+  const nExclu = exclure ? norm(exclure) : null;
   liste.forEach(w => {
     const n = norm(w);
-    if (n.length < 3 || n.length > 10 || vues.has(n)) return;
+    if (n.length < 3 || n.length > 10 || vues.has(n) || n === nExclu) return;
     vues.add(n);
     const reste = Object.assign({}, stock); let j = jokers, score = 0, ok = true;
     for (const ch of n) {
@@ -94217,10 +94218,12 @@ function indiceMeilleurMot(lettres) {
     if (n.length === 10 && !_indiceFormeExiste(w)) return;
     if (c.bonus) score += c.bonus;
     if (norm(c.th) === n) score *= 2;
-    if (!meilleur || score > meilleur.score || (score === meilleur.score && n.length > meilleur.mot.length)) meilleur = { mot: n, score: score };
+    trouves.push({ mot: n, score: score });
   });
-  return meilleur;
+  trouves.sort((a, b) => (b.score - a.score) || (b.mot.length - a.mot.length) || (a.mot < b.mot ? -1 : 1));
+  return trouves.slice(0, 3);
 }
+function indiceMeilleurMot(lettres) { const l = indiceMeilleursMots(lettres, null); return l.length ? l[0] : null; }
 
 function _indiceAfficher(html) {
   let el = document.getElementById('indice-fin-tour');
@@ -94245,13 +94248,15 @@ function _indiceAfficher(html) {
 function afficherIndice(joueur, motJoue, scoreJoue) {
   try {
     if (!joueur || joueur.isBot || !G.curCase || G.curCase.free) return;
-    const b = indiceMeilleurMot(joueur.letters || []);
+    const liste = indiceMeilleursMots(joueur.letters || [], motJoue);
+    const b = liste.length ? liste[0] : null;
+    const fmt = liste.map(x => '<span style="color:var(--gold-light,#FAD060)">' + x.mot + '</span> (' + x.score + ')').join(' · ');
     let msg;
     if (motJoue) {
       if (!b || b.score <= scoreJoue) msg = '🏆 Bravo : c\'était le meilleur mot possible avec vos lettres !';
-      else msg = '💡 Avec vos lettres, vous pouviez aussi former : <span style="color:var(--gold-light,#FAD060)">' + b.mot + '</span> (' + b.score + ' pts)';
+      else msg = '💡 Avec vos lettres, vous pouviez aussi former :<br>' + fmt;
     } else {
-      msg = b ? '💡 Vous pouviez former : <span style="color:var(--gold-light,#FAD060)">' + b.mot + '</span> (' + b.score + ' pts)'
+      msg = b ? '💡 Vous pouviez former :<br>' + fmt
               : 'Aucun mot de ce thème n\'était possible avec vos lettres.';
     }
     _indiceAfficher(msg);
