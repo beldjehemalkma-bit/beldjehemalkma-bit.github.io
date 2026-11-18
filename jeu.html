@@ -94262,6 +94262,28 @@ function _indiceAfficher(html) {
   el.innerHTML = html + '<span id="indice-fermer" style="position:absolute;right:6px;top:2px;padding:8px 10px;opacity:.8;font-size:1.1rem;cursor:pointer;pointer-events:auto">✕</span>';
   document.getElementById('indice-fermer').onclick = () => { el.style.display = 'none'; };
   el.style.display = 'block';
+  // placement : à droite du thème (zone libre) sur grand écran, sous le thème sur petit écran ; ne couvre jamais le nom du thème
+  try {
+    const tb = document.querySelector('.theme-box');
+    if (tb) {
+      const r = tb.getBoundingClientRect();
+      if (r.width >= 640) {
+        el.style.transform = 'none';
+        el.style.left = (r.left + r.width * 0.68) + 'px';
+        el.style.top = (r.top + 6) + 'px';
+        el.style.width = (r.width * 0.31) + 'px';
+        el.style.maxWidth = 'none';
+        el.style.fontSize = '.85rem';
+      } else {
+        el.style.transform = 'translateX(-50%)';
+        el.style.left = '50%';
+        el.style.top = Math.max(4, r.bottom + 4) + 'px';
+        el.style.width = 'max-content';
+        el.style.maxWidth = '92vw';
+        el.style.fontSize = '.95rem';
+      }
+    }
+  } catch (e) {}
   clearTimeout(window._indiceTimer);
   window._indiceTimer = setTimeout(() => { el.style.display = 'none'; }, 10000);
 }
