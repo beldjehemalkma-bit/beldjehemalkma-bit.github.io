@@ -94418,15 +94418,20 @@ function _indiceAfficher(html) {
       const libre = rb.right - droite - 28;      // place disponible à droite du texte du thème
       el.style.position = 'absolute';
       el.style.zIndex = '500';
+      const sous = () => {
+        el.style.right = 'auto'; el.style.left = '50%'; el.style.top = 'calc(100% + 4px)';
+        el.style.transform = 'translateX(-50%)';
+        el.style.width = 'max-content'; el.style.maxWidth = '92vw'; el.style.fontSize = '.95rem';
+      };
       if (libre >= 230) {
         el.style.left = 'auto'; el.style.right = '10px'; el.style.top = '50%';
         el.style.transform = 'translateY(-50%)';
         el.style.width = Math.min(libre, Math.round(rb.width * 0.46)) + 'px';
         el.style.maxWidth = 'none'; el.style.fontSize = '.85rem';
+        // message trop haut pour le cadre (texte long) : il ne déborde jamais, on le pose sous le cadre
+        if (el.getBoundingClientRect().height > rb.height - 8) sous();
       } else {
-        el.style.right = 'auto'; el.style.left = '50%'; el.style.top = 'calc(100% + 4px)';
-        el.style.transform = 'translateX(-50%)';
-        el.style.width = 'max-content'; el.style.maxWidth = '92vw'; el.style.fontSize = '.95rem';
+        sous();
       }
     }
   } catch (e) {}
