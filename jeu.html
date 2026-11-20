@@ -807,6 +807,18 @@ body:has(#s-home.active) .bouclier-corner { display:none; }
 .word-lbl{font-size:.8rem;}
 .gtile .tv{font-size:.82rem;}
 </style>
+<style>
+/* ── Jouer au clavier + accessibilité ── */
+button.gtile{font-family:inherit;padding:0;appearance:none;-webkit-appearance:none;text-align:center;line-height:1;}
+:where(a,button,input,select,textarea,[tabindex]):focus-visible{outline:3px solid var(--gold-light,#FAD060);outline-offset:2px;}
+.chev-box .gtile:focus-visible{outline:3px solid var(--gold-light,#FAD060);outline-offset:3px;z-index:3;}
+.ak-visually-hidden{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;}
+.kbd-hint{display:inline-flex;align-items:center;gap:5px;flex-wrap:wrap;font-size:.7rem;font-weight:500;letter-spacing:0;text-transform:none;color:rgba(255,255,255,.55);}
+.kbd-hint kbd{font-family:inherit;font-size:11px;font-weight:700;line-height:1;padding:3px 6px;border-radius:5px;background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.22);color:rgba(255,255,255,.8);}
+@keyframes chevRefus{0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}40%{transform:translateX(5px)}60%{transform:translateX(-3px)}80%{transform:translateX(2px)}}
+.chev-refus{animation:chevRefus .42s ease;}
+@media (max-width:760px){.kbd-hint{display:none;}}
+</style>
 </head>
 <body>
 
@@ -978,13 +990,14 @@ body:has(#s-home.active) .bouclier-corner { display:none; }
 
     <!-- Mot en formation -->
     <div class="word-box">
-      <div class="word-lbl">MOT EN FORMATION — Cliquez ou glissez les lettres ici</div>
+      <div class="word-lbl" style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap"><span>MOT EN FORMATION — Cliquez ou glissez les lettres ici</span><span class="kbd-hint"><kbd>A</kbd>–<kbd>Z</kbd> pour poser · <kbd>↵</kbd> valider · <kbd>⌫</kbd> effacer</span></div>
       <div class="word-drop" id="wdrop">
-        <span class="word-ph" id="wph">Sélectionnez ou glissez vos lettres...</span>
+        <span class="word-ph" id="wph">Tapez, cliquez ou glissez vos lettres...</span>
       </div>
       <div class="word-formed" id="wformed"></div>
       <div class="word-eval" id="weval"></div>
     </div>
+    <div id="ak-live" class="ak-visually-hidden" role="status" aria-live="polite"></div>
 
     <!-- Actions principales -->
     <div class="act-grid">
@@ -93436,7 +93449,8 @@ function renderChevalet() {
     return;
   }
   p.letters.forEach((l, i) => {
-    const t = document.createElement('div');
+    const t = document.createElement('button');
+    t.type = 'button';
     t.className = 'gtile ' + tClass(l) + ' ani';
     t.style.animationDelay = (i * 0.04) + 's';
     // Marquer selon le mode
@@ -93444,6 +93458,13 @@ function renderChevalet() {
     if (G.changeMode && G.changeSel.includes(i)) t.classList.add('in-change');
     const disp = l === '*' ? '★' : l;
     t.innerHTML = disp + '<span class="tv">' + vL(l) + '</span>';
+    // Accessibilité : dit ce que l'œil lit sur le jeton (lettre, valeur, déjà posé ou non)
+    const _pose = !G.changeMode && G.word.some(w => w.idx === i);
+    t.setAttribute('aria-label', l === '*'
+      ? 'Joker' + (_pose ? ', posé' : '')
+      : 'Lettre ' + l + ', ' + vL(l) + ' point' + (vL(l) > 1 ? 's' : '') + (_pose ? ', posée' : ''));
+    if (!G.changeMode) t.setAttribute('aria-pressed', _pose ? 'true' : 'false');
+    if (_pose) t.tabIndex = -1;   // jeton déjà posé (masqué à l'écran) : hors de l'ordre de tabulation
     // Clic
     t.addEventListener('click', () => handleTileClick(i, l));
     // Drag depuis chevalet
@@ -93484,6 +93505,91 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape' && _fw !== null) { _fwCancel(); renderWord(); }
 });
 
+/* ═══ JOUER AU CLAVIER ═══
+   une lettre : prend le premier jeton libre portant cette lettre (accents acceptés : é -> E)
+   Retour arrière : retire la dernière lettre posée · Entrée : valide · Échap : vide le mot
+   Le joker n'est jamais pris d'office : il se pose au clic. */
+function _saisieEnCours() {
+  const el = document.activeElement;
+  if (!el) return false;
+  return el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT' || el.isContentEditable;
+}
+function _modaleOuverte() {
+  return [...document.querySelectorAll('.ov')].some(o => getComputedStyle(o).display !== 'none');
+}
+function _partieEnCours() {
+  const s = document.getElementById('s-game');
+  return !!(s && s.classList.contains('active'));
+}
+function _jetonLibrePour(lettre) {
+  const p = curP();
+  if (!p || !p.letters) return -1;
+  const cible = norm(lettre || '');
+  if (!cible || cible.length !== 1) return -1;
+  const pris = new Set(G.word.map(w => w.idx));
+  for (let i = 0; i < p.letters.length; i++) {
+    if (p.letters[i] === '*') continue;
+    if (pris.has(i)) continue;
+    if (norm(p.letters[i]) === cible) return i;
+  }
+  return -1;
+}
+function _retirerDerniereLettre() {
+  if (!G.word.length) return;
+  const pos = G.word.length - 1;
+  G.word.splice(pos, 1);
+  if (G.insertPos !== undefined && G.insertPos > pos) G.insertPos = Math.max(0, G.insertPos - 1);
+  snd('remove');
+  renderChevalet();
+  renderWord();
+}
+let _refusTimer = null;
+function _signalerLettreAbsente(lettre) {
+  snd('err');
+  const box = document.querySelector('.chev-box');
+  if (box) {
+    box.classList.remove('chev-refus');
+    void box.offsetWidth;
+    box.classList.add('chev-refus');
+    clearTimeout(_refusTimer);
+    _refusTimer = setTimeout(() => box.classList.remove('chev-refus'), 500);
+  }
+  annoncer('Vous n\'avez pas de ' + String(lettre).toUpperCase() + ' disponible.');
+}
+/** Région vocale : l'état du mot pour qui ne voit pas l'écran. */
+function annoncer(texte) {
+  const el = document.getElementById('ak-live');
+  if (el) el.textContent = texte;
+}
+document.addEventListener('keydown', e => {
+  if (!_partieEnCours() || _saisieEnCours() || _modaleOuverte()) return;
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  if (typeof G === 'undefined' || !G.players || G.changeMode) return;   // le mode changement se pilote au clic
+  if (_fw !== null) return;                                              // un jeton est en cours de déplacement
+  if (typeof estMonTour === 'function' && !estMonTour()) return;
+  const p = curP();
+  if (!p || p.isBot) return;
+
+  if (e.key === 'Enter') {
+    // Ne pas court-circuiter un bouton au focus : Entrée l'actionne, pas la validation
+    if (document.activeElement && document.activeElement.tagName === 'BUTTON') return;
+    e.preventDefault();
+    validerMot();
+    return;
+  }
+  if (e.key === 'Backspace') { e.preventDefault(); _retirerDerniereLettre(); return; }
+  if (e.key === 'Escape') {
+    if (G.word.length) { e.preventDefault(); clearWord(); }
+    return;
+  }
+  if (e.key.length !== 1) return;
+  if (!/[a-zà-öø-ÿ]/i.test(e.key)) return;
+  e.preventDefault();
+  const i = _jetonLibrePour(e.key);
+  if (i === -1) { _signalerLettreAbsente(e.key); return; }
+  handleTileClick(i, p.letters[i]);   // même chemin que le clic : un seul comportement
+});
+
 function renderWord() {
   const drop = document.getElementById('wdrop');
   const ph = document.getElementById('wph');
@@ -93505,7 +93611,7 @@ function renderWord() {
   if (G.word.length === 0) {
     const p = document.createElement('span');
     p.className = 'word-ph'; p.id = 'wph';
-    p.textContent = 'Sélectionnez ou glissez vos lettres...';
+    p.textContent = 'Tapez, cliquez ou glissez vos lettres...';
     drop.appendChild(p);
     formed.textContent = '';
     evalEl.textContent = '';
@@ -93673,6 +93779,7 @@ function renderWord() {
   formed.textContent = word;
   const ev = evalWordSync(word);
   evalEl.textContent = 'Score : ' + ev.score + ' pts — ' + ev.reason;
+  annoncer(word.split('').join(' ') + '. ' + ev.score + ' points. ' + ev.reason);
   evalEl.style.color = ev.valid ? 'var(--green)' : (ev.score === 0 ? 'var(--red)' : 'var(--gold-light)');
 }
 
@@ -94291,25 +94398,40 @@ function _indiceAfficher(html) {
   el.innerHTML = html + '<span id="indice-fermer" style="position:absolute;right:6px;top:2px;padding:8px 10px;opacity:.8;font-size:1.1rem;cursor:pointer;pointer-events:auto">✕</span>';
   document.getElementById('indice-fermer').onclick = () => { el.style.display = 'none'; };
   el.style.display = 'block';
-  // placement : à droite du thème (zone libre) sur grand écran, sous le thème sur petit écran ; ne couvre jamais le nom du thème
+  // placement : DANS le cadre du thème (il le suit si la page défile).
+  // On mesure la place libre à droite du titre : si elle suffit, l'indice s'y loge, centré en hauteur ;
+  // sinon il se pose juste sous le cadre, sans jamais couvrir le nom du thème.
   try {
     const tb = document.querySelector('.theme-box');
     if (tb) {
-      const r = tb.getBoundingClientRect();
-      if (r.width >= 640) {
-        el.style.transform = 'none';
-        el.style.left = (r.left + r.width * 0.68) + 'px';
-        el.style.top = (r.top + 6) + 'px';
-        el.style.width = (r.width * 0.31) + 'px';
-        el.style.maxWidth = 'none';
-        el.style.fontSize = '.85rem';
-      } else {
+      if (getComputedStyle(tb).position === 'static') tb.style.position = 'relative';
+      if (el.parentNode !== tb) tb.appendChild(el);
+      const rb = tb.getBoundingClientRect();
+      let droite = rb.left + rb.width / 2;
+      ['tname', 'tsub', 'tfree'].forEach(id => {
+        const n = document.getElementById(id);
+        if (!n || n.offsetParent === null) return;
+        const rg = document.createRange(); rg.selectNodeContents(n);
+        const r = rg.getBoundingClientRect();
+        if (r.width > 0 && r.right > droite) droite = r.right;
+      });
+      const libre = rb.right - droite - 28;      // place disponible à droite du texte du thème
+      el.style.position = 'absolute';
+      el.style.zIndex = '500';
+      const sous = () => {
+        el.style.right = 'auto'; el.style.left = '50%'; el.style.top = 'calc(100% + 4px)';
         el.style.transform = 'translateX(-50%)';
-        el.style.left = '50%';
-        el.style.top = Math.max(4, r.bottom + 4) + 'px';
-        el.style.width = 'max-content';
-        el.style.maxWidth = '92vw';
-        el.style.fontSize = '.95rem';
+        el.style.width = 'max-content'; el.style.maxWidth = '92vw'; el.style.fontSize = '.95rem';
+      };
+      if (libre >= 230) {
+        el.style.left = 'auto'; el.style.right = '10px'; el.style.top = '50%';
+        el.style.transform = 'translateY(-50%)';
+        el.style.width = Math.min(libre, Math.round(rb.width * 0.46)) + 'px';
+        el.style.maxWidth = 'none'; el.style.fontSize = '.85rem';
+        // message trop haut pour le cadre (texte long) : il ne déborde jamais, on le pose sous le cadre
+        if (el.getBoundingClientRect().height > rb.height - 8) sous();
+      } else {
+        sous();
       }
     }
   } catch (e) {}
