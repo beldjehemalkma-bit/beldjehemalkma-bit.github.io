@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ALKAMO — Le Jeu des Mots</title>
+<meta name="description" content="ALKAMO : formez des mots dans le champ lexical d'un thème. Un jeu de vocabulaire, de sens et de réflexion, seul ou à plusieurs.">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon-192.png">
+<script>
+/* Joueur qui ouvre l'application installée : on l'envoie directement à l'accueil actuel, sans rien afficher */
+(function(){try{
+  var app=(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true||String(document.referrer).indexOf('android-app://')===0;
+  if(app&&location.search.indexOf('apercu')<0){location.replace('index.html');}
+}catch(e){}})();
+</script>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--v:#534AB7;--vd:#2E2575;--g:#C8A020;--gl:#FAD060;--dk:#0A0818;--dk2:#12103A;}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{min-height:100%}
+body{font-family:'DM Sans',sans-serif;color:#fff;background:
+ radial-gradient(ellipse 80% 60% at 20% 15%,rgba(83,74,183,.22),transparent 60%),
+ radial-gradient(ellipse 60% 50% at 80% 90%,rgba(29,158,117,.14),transparent 60%),var(--dk);
+ display:flex;flex-direction:column;align-items:center;min-height:100vh;padding:28px 18px 24px;text-align:center}
+main{width:100%;max-width:660px;margin:auto;display:flex;flex-direction:column;align-items:center;gap:22px}
+.logo{width:84px;height:84px;border-radius:20px;box-shadow:0 6px 24px rgba(0,0,0,.45)}
+h1{font-family:'Syne',sans-serif;font-weight:800;font-size:clamp(2.4rem,9vw,3.6rem);letter-spacing:.04em;
+ background:linear-gradient(90deg,var(--gl),var(--g));-webkit-background-clip:text;background-clip:text;color:transparent;line-height:1}
+.accroche{font-size:clamp(1rem,3.7vw,1.12rem);line-height:1.5;color:#e9e6ff;max-width:none;text-wrap:balance}
+.accroche b{color:var(--gl);font-weight:500}
+.video{width:100%;aspect-ratio:16/9;border-radius:16px;overflow:hidden;background:#0d0b26;border:1px solid rgba(255,255,255,.12);
+ display:flex;align-items:center;justify-content:center;flex-direction:column;gap:10px;color:#b9b4e8;font-size:.95rem}
+.video video{width:100%;height:100%;display:block;background:#000;object-fit:contain}
+.video iframe{width:100%;height:100%;border:0}
+.play{width:64px;height:64px;border-radius:50%;background:rgba(250,208,96,.16);border:2px solid var(--gl);display:flex;align-items:center;justify-content:center}
+.play::after{content:'';border-left:20px solid var(--gl);border-top:12px solid transparent;border-bottom:12px solid transparent;margin-left:5px}
+.boutons{width:100%;display:flex;gap:14px;flex-wrap:wrap}
+.btn{flex:1 1 220px;display:flex;flex-direction:column;gap:2px;align-items:center;justify-content:center;text-decoration:none;
+ padding:16px 18px;border-radius:14px;font-family:'Syne',sans-serif;font-weight:700;font-size:1.2rem;min-height:68px;transition:transform .15s}
+.btn small{font-family:'DM Sans',sans-serif;font-weight:400;font-size:.82rem;opacity:.85}
+.btn:active{transform:scale(.97)}
+.btn.solo{background:linear-gradient(135deg,var(--gl),var(--g));color:#2a2000}
+.btn.ligne{background:linear-gradient(135deg,var(--v),var(--vd));color:#fff;border:1px solid rgba(255,255,255,.22)}
+.btn:focus-visible,.plus:focus-visible{outline:3px solid #fff;outline-offset:3px}
+.plus{color:#c9c4f5;font-size:1rem;text-decoration:underline;text-underline-offset:4px;padding:8px}
+footer{margin-top:26px;font-size:.78rem;color:#8a86b8}
+footer a{color:#a9a4dd}
+@media (prefers-reduced-motion:reduce){.btn{transition:none}}
+</style>
+</head>
+<body>
+<main>
+  <img class="logo" src="icons/icon-192.png" alt="Logo ALKAMO">
+  <h1>ALKAMO</h1>
+  <p class="accroche">Un thème, des lettres, des mots à former <b>dans son champ lexical</b>.<br>Un jeu de vocabulaire, de sens et de réflexion, seul ou à plusieurs.</p>
+
+  <div class="video" id="video">
+    <video controls preload="metadata" playsinline poster="alkamo_video_poster.jpg" title="ALKAMO en 1 minute 40">
+      <source src="alkamo_video.mp4" type="video/mp4">
+      Votre navigateur ne peut pas lire cette vidéo.
+    </video>
+  </div>
+
+  <div class="boutons">
+    <a class="btn solo" href="jeu.html">Jouer seul<small>contre l'ordinateur ou à tour de rôle</small></a>
+    <a class="btn ligne" href="jeu.html">Jouer en ligne<small>à deux, chacun sur son écran</small></a>
+  </div>
+
+  <a class="plus" href="index.html">Découvrir le jeu en détail</a>
+</main>
+<footer><a href="mentions_legales.html">Mentions légales</a> · <a href="https://alkamo.fr/alkamo-arabe/index_ar.html">عربي</a></footer>
+</body>
+</html>
