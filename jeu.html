@@ -93242,6 +93242,7 @@ function isFree() { return G.curCase?.free === true; }
 // CASES / THÈMES
 // ═══════════════════════════════════════════
 function drawCase(silent) {
+  G.themePasses = 0; // nouveau thème : le compteur de passes repart à zéro
   G.themeRecu = false; // un thème fraîchement tiré n'est jamais « reçu » d'un adversaire
   if (G.previousCaseId && G.curCase && G.previousCaseId === G.curCase.id) G.usedCaseIds.delete(G.curCase.id);
   // Reconstruire le sac si vide
@@ -94256,6 +94257,7 @@ function _confirmerMotFinalize(word, pIdx) {
   G.previousCaseId = null;
   if (ev.valid && ev.score > 0) {
     G.passCount = 0; // reset quand un mot est validé
+    G.themePasses = 0;
     G.themeHistory.unshift({
       theme: G.curCase.free ? '★ MOT LIBRE' : (G.curCase.th||'?'),
       player: p.name, word: word, pts: ev.score
@@ -94473,14 +94475,26 @@ function passerTour() {
   afficherIndice(curP(), null, 0);
   G.passCount++;
   G.word = []; G.changeSel = []; G.changeMode = false;
+  // Règle : si tous les joueurs passent de suite sur le même thème, le thème est remplacé
+  G.themePasses = (G.themePasses || 0) + 1;
+  const _nbJ = _modeEnLigne ? 2 : G.players.length;
+  const _tousPasse = G.themePasses >= _nbJ;
+  const _msgTous = '🔄 Tout le monde a passé : nouveau thème';
   
   if (_modeEnLigne) {
     stopTimer();
     if (window._codePartie && window.publierAction)
       window.publierAction(window._codePartie, 'passer', {});
     if (window._idAdverse && window.passerAuTourSuivant) {
-      // Le thème reste le même : le joueur suivant décide de le jouer ou de le changer
-      window.passerAuTourSuivant(window._codePartie, window._idAdverse, G.round + 1, null, _garderThemeEnLigne());
+      if (_tousPasse) {
+        // Tout le monde a passé : le thème n'est pas gardé, un autre sera tiré pour le joueur suivant
+        G.themePasses = 0;
+        log(_msgTous, 'inf'); showFloat(_msgTous);
+        window.passerAuTourSuivant(window._codePartie, window._idAdverse, G.round + 1, null, null, 0, true);
+      } else {
+        // Le thème reste le même : le joueur suivant décide de le jouer ou de le changer
+        window.passerAuTourSuivant(window._codePartie, window._idAdverse, G.round + 1, null, _garderThemeEnLigne(), G.themePasses, false);
+      }
     }
     return;
   }
@@ -94489,6 +94503,14 @@ function passerTour() {
   if (G.passCount >= G.players.length * 3) {
     log('🚫 Partie bloquée — trop de passes !', 'bad');
     endGame();
+    return;
+  }
+  if (_tousPasse && G.curCase && !(G.playedCaseIds && CASES.filter(x => !G.playedCaseIds.has(x.id)).length <= 1)) {
+    // Tout le monde a passé : on remet le thème dans la pile et on en tire un autre
+    log(_msgTous, 'inf'); showFloat(_msgTous);
+    G.caseBag.unshift(G.curCase);
+    drawCase(false);
+    nextTurn();
     return;
   }
   _garderThemeLocal();
@@ -94548,9 +94570,28 @@ function confirmerChange() {
   log(p.name + ' change [' + old.join(',') + '] → [' + newL.join(',') + ']', 'inf');
   G.changeMode = false; G.changeSel = []; G.word = [];
   snd('ok');
+  // Un échange de lettres = le thème n'a pas été joué : il compte comme une passe
+  G.themePasses = (G.themePasses || 0) + 1;
+  const _nbJ2 = _modeEnLigne ? 2 : G.players.length;
+  const _tousPasse2 = G.themePasses >= _nbJ2;
+  const _msgTous2 = '🔄 Tout le monde a passé : nouveau thème';
   if (_modeEnLigne) {
-    // En ligne : le thème reste le même pour le joueur suivant
-    window._themeGardeId = _garderThemeEnLigne();
+    if (_tousPasse2) {
+      G.themePasses = 0;
+      window._themeGardeId = null; window._themeAutoEnvoi = true;
+      log(_msgTous2, 'inf'); showFloat(_msgTous2);
+    } else {
+      // En ligne : le thème reste le même pour le joueur suivant
+      window._themeGardeId = _garderThemeEnLigne();
+    }
+    window._themePassesEnvoi = G.themePasses;
+    nextTurn();
+    return;
+  }
+  if (_tousPasse2 && G.curCase && !(G.playedCaseIds && CASES.filter(x => !G.playedCaseIds.has(x.id)).length <= 1)) {
+    log(_msgTous2, 'inf'); showFloat(_msgTous2);
+    G.caseBag.unshift(G.curCase);
+    drawCase(false);
     nextTurn();
     return;
   }
@@ -94582,9 +94623,10 @@ function nextTurn() {
     stopTimer();
     const advId = window._idAdverse || (window._idJoueur === 'j1' ? 'j2' : 'j1');
     const gardeId = window._themeGardeId || null;
-    window._themeGardeId = null;
+    const _np = window._themePassesEnvoi || 0, _au = !!window._themeAutoEnvoi;
+    window._themeGardeId = null; window._themePassesEnvoi = 0; window._themeAutoEnvoi = false;
     if (window.passerAuTourSuivant && window._codePartie)
-      window.passerAuTourSuivant(window._codePartie, advId, G.round + 1, null, gardeId);
+      window.passerAuTourSuivant(window._codePartie, advId, G.round + 1, null, gardeId, _np, _au);
     return;
   }
 
@@ -94667,6 +94709,7 @@ function botPlay() {
 function botFinish(p, best, bestS) {
   if (best && bestS > 0) {
     G.passCount = 0; // reset quand le bot joue un mot valide
+    G.themePasses = 0;
     p.score += bestS;
     best.used.map(u => u.idx).sort((a,b)=>b-a).forEach(i => p.letters.splice(i,1));
     const botNewL = drawL(10 - p.letters.length);
@@ -95855,11 +95898,16 @@ function syncTour(tour, joueurs, scores) {
       G.previousCaseId = _caseGardee.id;
       G.curCase = _caseGardee;
       G.themeRecu = true;
+      G.themePasses = tour.themePasses || 0;
       G.word = []; G.changeSel = [];
       renderCase(); renderHistPanel();
     } else {
       G.themeRecu = false;
       drawCase(true);
+      if (tour.themeAuto) {
+        const _m = '🔄 Tout le monde a passé : nouveau thème';
+        log(_m, 'inf'); showFloat(_m);
+      }
     }
     if (G.curCase && window.publierTheme && window._codePartie) {
       window.publierTheme(window._codePartie, {
@@ -96131,11 +96179,13 @@ function ajouterMsgTexteLocal(who, texte, moi) {
     });
   };
 
-  window.passerAuTourSuivant = function(code, joueurSuivant, numero, lastCaseId, themeGardeId) {
+  window.passerAuTourSuivant = function(code, joueurSuivant, numero, lastCaseId, themeGardeId, nbPasses, themeAuto) {
     const data = {
       joueurActif: joueurSuivant, numero: numero,
       action: 'attente_theme', theme: null,
-      themeGarde: themeGardeId || null
+      themeGarde: themeGardeId || null,
+      themePasses: nbPasses || 0,
+      themeAuto: !!themeAuto
     };
     if (lastCaseId) data.lastCaseId = lastCaseId;
     update(ref(db, 'parties/' + code + '/tour'), data);
@@ -96800,6 +96850,7 @@ function traiterReponseDefi(accepte) {
     setTimeout(() => sndDeal(newL.length), 300);
     showFloat('+' + score); snd('ok');
     G.passCount = 0;
+    G.themePasses = 0;
     G.themeHistory.unshift({
       theme: G.curCase && G.curCase.free ? '★ MOT LIBRE' : (G.curCase && G.curCase.th ? G.curCase.th : '?'),
       player: p.name, word: word, pts: score
