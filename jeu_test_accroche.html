@@ -807,6 +807,9 @@ body:has(#s-home.active) .bouclier-corner { display:none; }
 .chat-btn{font-size:.95rem;font-weight:800;padding:11px 8px;}
 .chg-lbl{font-size:.85rem;}
 .chg-info{font-size:.92rem;}
+.chg-info.chg-alert{font-weight:900;font-size:1.35rem;color:#ffd54a;line-height:1.6;text-align:center;padding:6px 4px;animation:avisBlink 1s ease-in-out infinite;}
+@keyframes avisBlink{0%,100%{opacity:1;}50%{opacity:.25;}}
+@media (prefers-reduced-motion:reduce){.chg-info.chg-alert{animation:none;}}
 .word-lbl{font-size:.8rem;}
 .gtile .tv{font-size:.82rem;}
 </style>
@@ -93803,6 +93806,14 @@ function renderWord() {
   evalEl.style.color = ev.valid ? 'var(--green)' : (ev.score === 0 ? 'var(--red)' : 'var(--gold-light)');
 }
 
+function afficherAvisPasse(msg) {
+  // Affiche l'avis dans la zone d'instruction (au-dessus du bouton), en gras et clignotant, 10 secondes
+  window._avisActif = true; window._avisTxt = msg;
+  clearTimeout(window._avisTimer);
+  window._avisTimer = setTimeout(function () { window._avisActif = false; updateChangeUI(); }, 10000);
+  updateChangeUI();
+}
+
 function updateChangeUI() {
   const box = document.getElementById('chg-box');
   const lbl = document.getElementById('chg-lbl');
@@ -93826,6 +93837,8 @@ function updateChangeUI() {
     btn.textContent = 'Activer le changement';
     btn.className = 'btn btn-sm btn-red';
   }
+  if (window._avisActif && !G.changeMode) { info.textContent = window._avisTxt; info.classList.add('chg-alert'); }
+  else info.classList.remove('chg-alert');
 }
 
 // ═══════════════════════════════════════════
@@ -94423,37 +94436,15 @@ function _indiceAfficher(html) {
   // On mesure la place libre à droite du titre : si elle suffit, l'indice s'y loge, centré en hauteur ;
   // sinon il se pose juste sous le cadre, sans jamais couvrir le nom du thème.
   try {
-    const tb = document.querySelector('.theme-box');
-    if (tb) {
-      if (getComputedStyle(tb).position === 'static') tb.style.position = 'relative';
-      if (el.parentNode !== tb) tb.appendChild(el);
-      const rb = tb.getBoundingClientRect();
-      let droite = rb.left + rb.width / 2;
-      ['tname', 'tsub', 'tfree'].forEach(id => {
-        const n = document.getElementById(id);
-        if (!n || n.offsetParent === null) return;
-        const rg = document.createRange(); rg.selectNodeContents(n);
-        const r = rg.getBoundingClientRect();
-        if (r.width > 0 && r.right > droite) droite = r.right;
-      });
-      const libre = rb.right - droite - 28;      // place disponible à droite du texte du thème
-      el.style.position = 'absolute';
-      el.style.zIndex = '500';
-      const sous = () => {
-        el.style.right = 'auto'; el.style.left = '50%'; el.style.top = 'calc(100% + 4px)';
-        el.style.transform = 'translateX(-50%)';
-        el.style.width = 'max-content'; el.style.maxWidth = '92vw'; el.style.fontSize = '.95rem';
-      };
-      if (libre >= 230) {
-        el.style.left = 'auto'; el.style.right = '10px'; el.style.top = '50%';
-        el.style.transform = 'translateY(-50%)';
-        el.style.width = Math.min(libre, Math.round(rb.width * 0.46)) + 'px';
-        el.style.maxWidth = 'none'; el.style.fontSize = '.85rem';
-        // message trop haut pour le cadre (texte long) : il ne déborde jamais, on le pose sous le cadre
-        if (el.getBoundingClientRect().height > rb.height - 8) sous();
-      } else {
-        sous();
-      }
+    const zone = document.querySelector('.word-box');
+    if (zone) {
+      // Place FIXE : au milieu de l'écran, dans la zone « mot en formation » (vide en fin de tour)
+      if (getComputedStyle(zone).position === 'static') zone.style.position = 'relative';
+      if (el.parentNode !== zone) zone.appendChild(el);
+      el.style.position = 'absolute'; el.style.zIndex = '500';
+      el.style.right = 'auto'; el.style.left = '50%'; el.style.top = '58%';
+      el.style.transform = 'translate(-50%,-50%)';
+      el.style.width = 'min(88%, 520px)'; el.style.maxWidth = 'none'; el.style.fontSize = '1rem';
     }
   } catch (e) {}
   clearTimeout(window._indiceTimer);
@@ -94508,7 +94499,7 @@ function passerTour() {
       if (_tousPasse) {
         // Tout le monde a passé : le thème n'est pas gardé, un autre sera tiré pour le joueur suivant
         G.themePasses = 0;
-        log(_msgTous, 'inf'); showFloat(_msgTous);
+        log(_msgTous, 'inf'); showFloat(_msgTous); afficherAvisPasse(_msgTous);
         window.passerAuTourSuivant(window._codePartie, window._idAdverse, G.round + 1, null, null, 0, true);
       } else {
         // Le thème reste le même : le joueur suivant décide de le jouer ou de le changer
@@ -94526,7 +94517,7 @@ function passerTour() {
   }
   if (_tousPasse && G.curCase && !(G.playedCaseIds && CASES.filter(x => !G.playedCaseIds.has(x.id)).length <= 1)) {
     // Tout le monde a passé : on remet le thème dans la pile et on en tire un autre
-    log(_msgTous, 'inf'); showFloat(_msgTous);
+    log(_msgTous, 'inf'); showFloat(_msgTous); afficherAvisPasse(_msgTous);
     G.caseBag.unshift(G.curCase);
     drawCase(false);
     nextTurn();
@@ -94598,7 +94589,7 @@ function confirmerChange() {
     if (_tousPasse2) {
       G.themePasses = 0;
       window._themeGardeId = null; window._themeAutoEnvoi = true;
-      log(_msgTous2, 'inf'); showFloat(_msgTous2);
+      log(_msgTous2, 'inf'); showFloat(_msgTous2); afficherAvisPasse(_msgTous2);
     } else {
       // En ligne : le thème reste le même pour le joueur suivant
       window._themeGardeId = _garderThemeEnLigne();
@@ -94608,7 +94599,7 @@ function confirmerChange() {
     return;
   }
   if (_tousPasse2 && G.curCase && !(G.playedCaseIds && CASES.filter(x => !G.playedCaseIds.has(x.id)).length <= 1)) {
-    log(_msgTous2, 'inf'); showFloat(_msgTous2);
+    log(_msgTous2, 'inf'); showFloat(_msgTous2); afficherAvisPasse(_msgTous2);
     G.caseBag.unshift(G.curCase);
     drawCase(false);
     nextTurn();
@@ -95927,7 +95918,7 @@ function syncTour(tour, joueurs, scores) {
       drawCase(true);
       if (tour.themeAuto) {
         const _m = '🔄 Tout le monde a passé : nouveau thème';
-        log(_m, 'inf'); showFloat(_m);
+        log(_m, 'inf'); showFloat(_m); afficherAvisPasse(_m);
       }
     }
     if (G.curCase && window.publierTheme && window._codePartie) {
